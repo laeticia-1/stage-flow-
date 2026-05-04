@@ -1,0 +1,1246 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StageFlow — Espace Enseignant</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Lora:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --blue-dark:#1e3a6e; --blue-mid:#2d5aa0; --blue-light:#4a90d9; --blue-pale:#c8dff5;
+    --bg:#ddeeff; --bg2:#e8f2fc; --white:#ffffff;
+    --text:#1a2e4a; --text2:#4a6080; --text3:#7a95b0;
+    --green:#27ae6e; --green-bg:rgba(39,174,110,0.12);
+    --red:#e74c3c; --red-bg:rgba(231,76,60,0.10);
+    --orange:#e09040; --orange-bg:rgba(224,144,64,0.12);
+    --sidebar-w:190px;
+    --shadow:0 4px 20px rgba(30,58,110,0.10);
+    --shadow-lg:0 8px 32px rgba(30,58,110,0.14);
+    --radius:14px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(--text);display:flex;min-height:100vh;}
+
+  /* SIDEBAR */
+  .sidebar{width:var(--sidebar-w);background:var(--blue-dark);display:flex;flex-direction:column;align-items:center;padding:28px 0 20px;position:fixed;height:100vh;z-index:100;}
+  .sb-avatar{width:68px;height:68px;border-radius:50%;background:rgba(255,255,255,0.15);border:2px solid rgba(255,255,255,0.25);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;color:#fff;margin-bottom:8px;}
+  .sb-name{font-size:12px;color:rgba(255,255,255,0.8);font-weight:500;margin-bottom:24px;text-align:center;padding:0 12px;}
+  .sb-nav{width:100%;padding:0 10px;flex:1;display:flex;flex-direction:column;gap:2px;}
+  .sb-item{display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:9px;color:rgba(255,255,255,0.6);font-size:12.5px;font-weight:500;cursor:pointer;transition:all .15s;text-decoration:none;border:none;background:none;width:100%;font-family:inherit;}
+  .sb-item:hover{background:rgba(255,255,255,0.1);color:#fff;}
+  .sb-item.active{background:rgba(255,255,255,0.18);color:#fff;font-weight:600;}
+  .sb-icon{font-size:14px;width:16px;text-align:center;flex-shrink:0;}
+  .sb-footer{width:100%;padding:0 10px;margin-top:auto;}
+  .sb-logout{width:100%;padding:9px 12px;border-radius:9px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:rgba(255,255,255,0.7);font-size:12.5px;font-weight:500;cursor:pointer;font-family:inherit;transition:all .15s;}
+  .sb-logout:hover{background:rgba(255,255,255,0.16);color:#fff;}
+
+  /* MAIN */
+  .main{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;min-height:100vh;}
+
+  /* TOPBAR */
+  .topbar{background:var(--white);border-bottom:1px solid rgba(30,58,110,0.08);padding:0 28px;height:60px;display:flex;align-items:center;gap:14px;box-shadow:0 2px 10px rgba(30,58,110,0.06);position:sticky;top:0;z-index:50;}
+  .tb-logo{margin-right:auto;display:flex;align-items:center;gap:8px;}
+  .tb-logo-icon{width:30px;height:30px;background:linear-gradient(135deg,var(--blue-mid),var(--blue-light));border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px;}
+  .tb-logo-text{font-weight:800;font-size:16px;color:var(--blue-dark);line-height:1;}
+  .tb-logo-sub{font-size:9px;color:var(--text3);font-weight:500;display:block;}
+  .tb-search{display:flex;align-items:center;gap:7px;background:var(--bg2);border:1px solid rgba(30,58,110,0.1);border-radius:8px;padding:6px 12px;font-size:12px;color:var(--text3);width:190px;}
+  .tb-search input{background:none;border:none;outline:none;font-family:inherit;font-size:12px;color:var(--text);width:100%;}
+  .tb-bell{width:34px;height:34px;background:var(--bg2);border:1px solid rgba(30,58,110,0.1);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;font-size:16px;transition:all .15s;}
+  .tb-bell:hover{background:var(--blue-pale);}
+  .tb-dot{position:absolute;top:7px;right:7px;width:7px;height:7px;background:var(--orange);border-radius:50%;border:1.5px solid var(--white);}
+
+  /* CONTENT */
+  .content{padding:28px;flex:1;}
+  .page{display:none;}
+  .page.active{display:block;}
+
+  /* PAGE HEADER */
+  .page-header{margin-bottom:24px;}
+  .page-title{font-family:'Lora',serif;font-size:clamp(20px,2.5vw,26px);font-weight:600;color:var(--text);margin-bottom:4px;}
+  .page-sub{font-size:13px;color:var(--text2);}
+
+  /* ALERT BANNER */
+  .alert-banner{background:#fff8ed;border:1px solid rgba(224,144,64,0.35);border-radius:var(--radius);padding:12px 18px;margin-bottom:20px;display:flex;align-items:center;gap:10px;font-size:13px;color:#7a4a00;}
+  .alert-banner .ab-close{margin-left:auto;cursor:pointer;color:var(--text3);font-size:15px;}
+
+  /* STAT CARDS */
+  .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px;}
+  .stat-card{border-radius:var(--radius);padding:18px 20px;position:relative;overflow:hidden;transition:transform .2s,box-shadow .2s;cursor:default;border:1px solid transparent;}
+  .stat-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg);}
+  .sc-icon{font-size:26px;margin-bottom:8px;}
+  .sc-val{font-family:'Lora',serif;font-size:36px;font-weight:700;line-height:1;}
+  .sc-lbl{font-size:12px;font-weight:600;margin-top:4px;}
+  .sc-sub{font-size:11px;margin-top:5px;}
+  .sc-blue  {background:#dbeafe;border-color:#bfdbfe;}
+  .sc-blue  .sc-val{color:#1d4ed8;} .sc-blue  .sc-lbl{color:#2563eb;} .sc-blue  .sc-sub{color:#60a5fa;} .sc-blue  .sc-icon{filter:none;}
+  .sc-green {background:#d1fae5;border-color:#a7f3d0;}
+  .sc-green .sc-val{color:#065f46;} .sc-green .sc-lbl{color:#047857;} .sc-green .sc-sub{color:#34d399;}
+  .sc-red   {background:#fee2e2;border-color:#fecaca;}
+  .sc-red   .sc-val{color:#991b1b;} .sc-red   .sc-lbl{color:#b91c1c;} .sc-red   .sc-sub{color:#f87171;}
+  .sc-orange{background:#ffedd5;border-color:#fed7aa;}
+  .sc-orange .sc-val{color:#92400e;} .sc-orange .sc-lbl{color:#b45309;} .sc-orange .sc-sub{color:#fb923c;}
+
+  /* TWO COL */
+  .two-col{display:grid;grid-template-columns:1fr 280px;gap:18px;}
+
+  /* CARD */
+  .card{background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow);border:1px solid rgba(30,58,110,0.07);overflow:hidden;}
+  .card-head{padding:16px 20px;border-bottom:1px solid rgba(30,58,110,0.07);display:flex;align-items:center;gap:10px;}
+  .card-title{font-size:14px;font-weight:700;color:var(--text);flex:1;}
+
+  /* TABLE */
+  table{width:100%;border-collapse:collapse;}
+  thead tr{border-bottom:1px solid rgba(30,58,110,0.1);}
+  thead th{padding:10px 18px;text-align:left;font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;white-space:nowrap;}
+  tbody tr{border-bottom:1px solid rgba(30,58,110,0.06);transition:background .12s;cursor:pointer;}
+  tbody tr:last-child{border-bottom:none;}
+  tbody tr:hover{background:var(--bg2);}
+  tbody td{padding:12px 18px;font-size:12.5px;color:var(--text2);}
+  .td-main{color:var(--text);font-weight:600;font-size:13px;}
+  .td-sub{font-size:11px;color:var(--text3);margin-top:1px;}
+
+  /* STUDENT AVATAR */
+  .stu-avatar{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0;}
+
+  /* BADGE */
+  .badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:99px;font-size:11px;font-weight:600;}
+  .b-green{background:var(--green-bg);color:#1a7a4a;}
+  .b-red{background:var(--red-bg);color:#b03020;}
+  .b-orange{background:var(--orange-bg);color:#a06010;}
+  .b-blue{background:rgba(74,144,217,0.12);color:var(--blue-mid);}
+
+  /* BTN */
+  .btn{display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:9px;font-size:12.5px;font-weight:600;cursor:pointer;border:none;font-family:inherit;transition:all .15s;}
+  .btn-primary{background:var(--blue-dark);color:#fff;}
+  .btn-primary:hover{background:var(--blue-mid);transform:translateY(-1px);}
+  .btn-outline{background:var(--white);color:var(--text2);border:1px solid rgba(30,58,110,0.15);}
+  .btn-outline:hover{background:var(--bg2);color:var(--text);}
+  .btn-green{background:var(--green);color:#fff;}
+  .btn-green:hover{background:#1e9a5a;}
+  .btn-red{background:var(--red);color:#fff;}
+  .btn-red:hover{background:#c0392b;}
+  .btn-sm{padding:5px 12px;font-size:11.5px;}
+
+  /* ACTION BTNS */
+  .action-btns{display:flex;gap:6px;}
+
+  /* CHART (CSS bars) */
+  .chart-wrap{padding:16px 20px 10px;}
+  .chart-legend{display:flex;gap:14px;margin-bottom:12px;font-size:11px;font-weight:600;}
+  .leg-dot{width:8px;height:8px;border-radius:2px;display:inline-block;margin-right:4px;}
+  .chart-bars{display:flex;align-items:flex-end;gap:8px;height:80px;}
+  .bar-group{display:flex;gap:3px;align-items:flex-end;flex:1;}
+  .bar{border-radius:4px 4px 0 0;min-width:14px;transition:opacity .2s;}
+  .bar:hover{opacity:.75;}
+  .chart-labels{display:flex;gap:8px;margin-top:6px;}
+  .chart-lbl{flex:1;text-align:center;font-size:10px;color:var(--text3);}
+
+  /* QA */
+  .qa-item{display:flex;align-items:center;gap:10px;padding:11px 16px;border-bottom:1px solid rgba(30,58,110,0.06);cursor:pointer;transition:background .12s;}
+  .qa-item:last-child{border-bottom:none;}
+  .qa-item:hover{background:var(--bg2);}
+  .qa-icon{font-size:14px;flex-shrink:0;}
+  .qa-label{font-size:12.5px;font-weight:600;color:var(--text);flex:1;}
+  .qa-arrow{color:var(--text3);font-size:13px;}
+
+  /* PROPOSITIONS GRID */
+  .prop-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  .prop-tabs{display:flex;gap:8px;margin-bottom:18px;align-items:center;}
+  .prop-tab{padding:7px 18px;border-radius:99px;font-size:12.5px;font-weight:600;cursor:pointer;border:1px solid rgba(30,58,110,0.15);background:var(--white);color:var(--text2);transition:all .15s;}
+  .prop-tab.active{background:var(--blue-dark);color:#fff;border-color:var(--blue-dark);}
+  .prop-card{background:var(--white);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow);border:1px solid rgba(30,58,110,0.07);transition:all .2s;}
+  .prop-card:hover{box-shadow:var(--shadow-lg);transform:translateY(-2px);}
+  .prop-card-head{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;}
+  .prop-card-title{font-family:'Lora',serif;font-size:15px;font-weight:600;color:var(--text);line-height:1.35;flex:1;padding-right:12px;}
+  .prop-status{padding:4px 12px;border-radius:99px;font-size:11px;font-weight:600;white-space:nowrap;}
+  .ps-active{background:var(--green-bg);color:#1a7a4a;border:1px solid rgba(39,174,110,0.3);}
+  .ps-draft{background:var(--orange-bg);color:#a06010;border:1px solid rgba(224,144,64,0.3);}
+  .prop-desc{font-size:12px;color:var(--text2);line-height:1.55;margin-bottom:12px;}
+  .prop-tags{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:12px;}
+  .prop-tag{background:var(--bg2);color:var(--text2);border-radius:7px;padding:3px 10px;font-size:11px;font-weight:500;}
+  .prop-footer{display:flex;align-items:center;gap:8px;}
+  .prop-cands{font-size:12px;color:var(--text3);flex:1;}
+
+  /* VALIDATION */
+  .val-section-title{font-size:14px;font-weight:700;color:var(--text);margin:20px 0 10px;}
+  .val-section-sub{font-size:12px;color:var(--text3);margin-bottom:14px;}
+  .filter-row{display:flex;gap:10px;margin-bottom:18px;align-items:center;}
+  .filter-input{display:flex;align-items:center;gap:7px;background:var(--white);border:1px solid rgba(30,58,110,0.15);border-radius:8px;padding:7px 12px;font-size:12px;flex:1;max-width:300px;}
+  .filter-input input{background:none;border:none;outline:none;font-family:inherit;font-size:12px;color:var(--text);width:100%;}
+  .filter-select{background:var(--white);border:1px solid rgba(30,58,110,0.15);border-radius:8px;padding:7px 12px;font-size:12px;font-family:inherit;color:var(--text2);cursor:pointer;outline:none;}
+  .doc-icons{display:flex;gap:6px;}
+  .doc-icon-btn{width:28px;height:28px;border-radius:6px;background:var(--bg2);border:1px solid rgba(30,58,110,0.1);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;transition:all .15s;}
+  .doc-icon-btn:hover{background:var(--blue-pale);}
+
+  /* SUIVI */
+  .suivi-layout{display:grid;grid-template-columns:1fr 300px;gap:18px;}
+  .suivi-card{background:var(--white);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow);border:1px solid rgba(30,58,110,0.07);margin-bottom:12px;display:flex;align-items:center;gap:14px;cursor:pointer;transition:all .15s;}
+  .suivi-card:hover{box-shadow:var(--shadow-lg);transform:translateX(3px);}
+  .suivi-card.selected{border-color:var(--blue-mid);border-left:3px solid var(--blue-mid);}
+  .suivi-info{flex:1;}
+  .suivi-name{font-size:13px;font-weight:700;color:var(--text);}
+  .suivi-sub{font-size:11px;color:var(--text3);}
+  .suivi-progress{display:flex;gap:6px;margin-top:8px;align-items:center;}
+  .prog-step{font-size:10px;font-weight:600;padding:2px 8px;border-radius:99px;}
+  .ps-done{background:var(--green-bg);color:#1a7a4a;}
+  .ps-active{background:var(--orange-bg);color:#a06010;}
+  .ps-pending{background:rgba(30,58,110,0.07);color:var(--text3);}
+  .detail-card{background:var(--white);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow);border:1px solid rgba(30,58,110,0.07);position:sticky;top:80px;}
+  .detail-stu-head{display:flex;align-items:center;gap:10px;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid rgba(30,58,110,0.08);}
+  .timeline{margin-top:4px;}
+  .tl-item{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid rgba(30,58,110,0.06);position:relative;}
+  .tl-item:last-child{border-bottom:none;}
+  .tl-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;margin-top:4px;}
+  .tl-content{}
+  .tl-date{font-size:10px;font-weight:600;color:var(--text3);margin-bottom:3px;}
+  .tl-title{font-size:12.5px;font-weight:700;color:var(--text);}
+  .tl-desc{font-size:11.5px;color:var(--text2);line-height:1.5;margin-top:2px;}
+
+  /* ATTESTATION */
+  .attest-layout{display:grid;grid-template-columns:300px 1fr;gap:20px;}
+  .attest-form-card{background:var(--white);border-radius:var(--radius);padding:22px;box-shadow:var(--shadow);border:1px solid rgba(30,58,110,0.07);}
+  .form-label{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;display:block;margin-bottom:5px;}
+  .form-input,.form-select,.form-textarea{width:100%;background:var(--bg2);border:1px solid rgba(30,58,110,0.12);border-radius:8px;padding:9px 12px;font-size:13px;font-family:inherit;color:var(--text);outline:none;transition:border-color .15s;margin-bottom:14px;}
+  .form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--blue-light);background:var(--white);}
+  .form-textarea{resize:vertical;min-height:80px;}
+  .attest-preview{background:#fff;border-radius:var(--radius);padding:28px;box-shadow:var(--shadow-lg);border:1px solid rgba(30,58,110,0.1);}
+  .attest-uni{text-align:center;font-size:13px;font-weight:600;color:#1a2e4a;margin-bottom:4px;}
+  .attest-uni-sub{text-align:center;font-size:11px;color:#4a6080;margin-bottom:16px;}
+  .attest-title{text-align:center;font-size:18px;font-weight:800;color:var(--blue-dark);letter-spacing:.5px;margin-bottom:4px;}
+  .attest-divider{height:2px;background:var(--blue-dark);margin:14px 0 20px;}
+  .attest-body{font-size:13px;color:#2a3a50;line-height:1.8;}
+  .attest-body .hi{color:var(--blue-mid);font-weight:600;}
+
+  /* NOTIFICATIONS */
+  .notif-tabs{display:flex;gap:8px;margin-bottom:16px;align-items:center;}
+  .notif-tab{padding:7px 18px;border-radius:99px;font-size:12.5px;font-weight:600;cursor:pointer;border:1px solid rgba(30,58,110,0.15);background:var(--white);color:var(--text2);transition:all .15s;}
+  .notif-tab.active{background:var(--blue-dark);color:#fff;border-color:var(--blue-dark);}
+  .mark-btn{margin-left:auto;font-size:12px;font-weight:500;color:var(--blue-mid);background:var(--white);border:1px solid rgba(30,58,110,0.15);border-radius:99px;padding:6px 16px;cursor:pointer;font-family:inherit;}
+  .mark-btn:hover{background:var(--blue-pale);}
+  .notif-item{background:var(--white);border-radius:var(--radius);padding:14px 18px;margin-bottom:10px;display:flex;gap:12px;box-shadow:0 2px 8px rgba(30,58,110,0.06);border:1px solid rgba(30,58,110,0.07);transition:all .15s;cursor:pointer;position:relative;}
+  .notif-item:hover{box-shadow:var(--shadow);transform:translateY(-1px);}
+  .notif-item.unread{border-left:3px solid var(--orange);}
+  .ni-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+  .ni-dot{position:absolute;top:12px;right:14px;width:8px;height:8px;background:var(--orange);border-radius:50%;}
+  .ni-text{font-size:12.5px;color:var(--text2);line-height:1.5;}
+  .ni-text strong{color:var(--green);font-weight:600;}
+  .ni-time{font-size:11px;color:var(--text3);margin-top:5px;}
+
+  /* PROFIL */
+  .prof-header{background:var(--blue-dark);border-radius:var(--radius);padding:22px 26px;margin-bottom:18px;display:flex;align-items:center;gap:16px;}
+  .prof-av{width:52px;height:52px;border-radius:12px;background:rgba(255,255,255,0.15);border:2px solid rgba(255,255,255,0.25);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:#fff;flex-shrink:0;}
+  .prof-name{font-size:20px;font-weight:700;color:#fff;}
+  .prof-email{font-size:12px;color:rgba(255,255,255,0.65);margin-top:2px;}
+  .prof-chips{display:flex;gap:10px;margin-top:10px;flex-wrap:wrap;}
+  .prof-chip{background:rgba(255,255,255,0.12);color:rgba(255,255,255,0.9);border-radius:8px;padding:4px 14px;font-size:12px;font-weight:500;}
+  .prof-chip span{color:var(--orange);font-weight:700;margin-right:4px;}
+  .info-card{background:var(--white);border-radius:var(--radius);padding:22px;box-shadow:var(--shadow);border:1px solid rgba(30,58,110,0.07);margin-bottom:16px;}
+  .ic-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:16px;}
+  .ic-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  .ic-field label{font-size:10px;font-weight:700;color:var(--blue-light);text-transform:uppercase;letter-spacing:.6px;display:block;margin-bottom:3px;}
+  .ic-field .val{font-size:13.5px;color:var(--text);font-weight:500;}
+
+  /* NOUVELLE PROP FORM */
+  .nform-card{background:var(--bg2);border-radius:var(--radius);padding:26px 28px;border:1px solid rgba(30,58,110,0.08);max-width:700px;}
+  .nform-section{margin-bottom:22px;}
+  .nform-section-title{font-size:16px;font-weight:700;color:var(--text);padding-left:10px;border-left:3px solid var(--blue-light);margin-bottom:16px;}
+  .nf-label{font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.8px;display:block;margin-bottom:6px;}
+  .nf-input,.nf-select,.nf-textarea{width:100%;background:var(--white);border:1px solid rgba(30,58,110,0.15);border-radius:9px;padding:10px 14px;font-size:13.5px;font-family:inherit;color:var(--text);outline:none;transition:border-color .15s;margin-bottom:14px;}
+  .nf-input:focus,.nf-select:focus,.nf-textarea:focus{border-color:var(--blue-light);}
+  .nf-textarea{resize:vertical;min-height:110px;line-height:1.6;}
+  .nf-hint{font-size:11px;color:var(--text3);margin-top:-10px;margin-bottom:14px;}
+  .nf-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  .nform-footer{display:flex;gap:10px;justify-content:flex-end;padding-top:18px;border-top:1px solid rgba(30,58,110,0.1);}
+
+  /* MODAL */
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.45);backdrop-filter:blur(3px);z-index:200;display:none;align-items:center;justify-content:center;}
+  .modal-overlay.open{display:flex;}
+  .modal{background:var(--white);border-radius:16px;width:440px;max-width:95vw;padding:26px;box-shadow:0 16px 60px rgba(0,0,0,0.2);animation:popIn .2s ease;}
+  @keyframes popIn{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
+  .modal-title{font-size:16px;font-weight:700;color:var(--text);margin-bottom:16px;}
+  .modal-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:20px;}
+
+  /* TOAST */
+  #toast{position:fixed;bottom:22px;right:22px;background:var(--blue-dark);color:#fff;border-radius:11px;padding:12px 18px;font-size:13px;font-weight:500;box-shadow:var(--shadow-lg);transform:translateY(80px);opacity:0;transition:all .3s;z-index:9999;max-width:300px;}
+
+  /* ANIMATIONS */
+  @keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+  .page.active > *{animation:fadeUp .35s ease both;}
+
+  /* RESPONSIVE */
+  @media(max-width:960px){
+    .sidebar{display:none;}
+    .main{margin-left:0;}
+    .stats-row,.two-col,.suivi-layout,.attest-layout,.nf-row,.ic-grid{grid-template-columns:1fr 1fr;}
+    .prop-grid{grid-template-columns:1fr;}
+  }
+  @media(max-width:600px){
+    .content{padding:14px;}
+    .stats-row{grid-template-columns:1fr 1fr;}
+  }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sb-avatar">AB</div>
+  <div class="sb-name">Ahmed Benali</div>
+  <nav class="sb-nav">
+    <button class="sb-item active" onclick="showPage('dashboard')"><span class="sb-icon">⬡</span> Tableau de bord</button>
+    <button class="sb-item" onclick="showPage('propositions')"><span class="sb-icon">📌</span> Propositions</button>
+    <button class="sb-item" onclick="showPage('nouvelle')"><span class="sb-icon">➕</span> Nouvelle</button>
+    <button class="sb-item" onclick="showPage('validation')"><span class="sb-icon">📋</span> Validation</button>
+    <button class="sb-item" onclick="showPage('etudiants')"><span class="sb-icon">👤</span> Mes étudiants</button>
+    <button class="sb-item" onclick="showPage('attestations')"><span class="sb-icon">📄</span> Attestations</button>
+    <button class="sb-item" onclick="showPage('notifications')"><span class="sb-icon">🔔</span> Notifications</button>
+    <div style="margin-top:20px;"></div>
+    <button class="sb-item" onclick="showPage('profil')"><span class="sb-icon">👤</span> Mon profil</button>
+  </nav>
+  <div class="sb-footer">
+    <button class="sb-logout" onclick="window.location='index__6_.html'">Déconnexion</button>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+  <header class="topbar">
+    <div class="tb-logo">
+      <div class="tb-logo-icon">🎓</div>
+      <div>
+        <div class="tb-logo-text">StageFlow</div>
+        <span class="tb-logo-sub">DPGR · Gestion intelligente des stages</span>
+      </div>
+    </div>
+    <div class="tb-search"><span>🔍</span><input type="text" placeholder="Rechercher..."></div>
+    <div class="tb-bell" onclick="showPage('notifications')">🔔<span class="tb-dot"></span></div>
+  </header>
+
+  <div class="content">
+
+    <!-- ══ DASHBOARD ══ -->
+    <div class="page active" id="page-dashboard">
+      <div class="page-header">
+        <div class="page-title">Bonjour, cher enseignant 👋</div>
+        <div class="page-sub">Voici un aperçu de vos activités</div>
+      </div>
+
+      <div class="alert-banner">
+        <span>⚡</span>
+        <span><strong>4 nouvelles demandes</strong> en attente de votre validation — Promotion 2025/2026</span>
+        <span class="ab-close" onclick="this.parentElement.style.display='none'">✕</span>
+      </div>
+
+      <div class="stats-row">
+        <div class="stat-card sc-blue">
+          <div class="sc-icon">📥</div>
+          <div class="sc-val">12</div>
+          <div class="sc-lbl">Demandes reçues</div>
+          <div class="sc-sub">↑ 4 cette semaine</div>
+        </div>
+        <div class="stat-card sc-green">
+          <div class="sc-icon">✅</div>
+          <div class="sc-val">6</div>
+          <div class="sc-lbl">Demandes validées</div>
+          <div class="sc-sub">✓ Transmises à l'admin</div>
+        </div>
+        <div class="stat-card sc-red">
+          <div class="sc-icon">✗</div>
+          <div class="sc-val">2</div>
+          <div class="sc-lbl">Demandes refusées</div>
+          <div class="sc-sub">Motifs communiqués</div>
+        </div>
+        <div class="stat-card sc-orange">
+          <div class="sc-icon">⏳</div>
+          <div class="sc-val">4</div>
+          <div class="sc-lbl">Demandes en attente</div>
+          <div class="sc-sub">À traiter dès que possible</div>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div class="card">
+          <div class="card-head">
+            <div class="card-title">Dernières demandes <span style="font-size:11px;color:var(--text3);font-weight:400">Toutes les demandes reçues récemment</span></div>
+            <button class="btn btn-outline btn-sm" onclick="showPage('validation')">Voir tout →</button>
+          </div>
+          <table>
+            <thead>
+              <tr><th>Étudiant</th><th>Entreprise</th><th>Période</th><th>Statut</th><th>Action</th></tr>
+            </thead>
+            <tbody>
+              <tr onclick="showPage('validation')">
+                <td>
+                  <div style="display:flex;align-items:center;gap:8px">
+                    <div class="stu-avatar" style="background:#7b68ee">AO</div>
+                    <div><div class="td-main">Amina Ouali</div></div>
+                  </div>
+                </td>
+                <td>BNA Banque</td>
+                <td style="font-size:11.5px">Juil — Sep 2026</td>
+                <td><span class="badge b-orange">● En attente</span></td>
+                <td><button class="btn btn-outline btn-sm" onclick="event.stopPropagation();showPage('validation')">Examiner</button></td>
+              </tr>
+              <tr onclick="showPage('etudiants')">
+                <td>
+                  <div style="display:flex;align-items:center;gap:8px">
+                    <div class="stu-avatar" style="background:#27ae6e">YB</div>
+                    <div><div class="td-main">Yassine Benkhalil</div></div>
+                  </div>
+                </td>
+                <td>Sonatrach</td>
+                <td style="font-size:11.5px">Jun — Aoû 2026</td>
+                <td><span class="badge b-green">✓ Validée</span></td>
+                <td><button class="btn btn-outline btn-sm" onclick="event.stopPropagation();showPage('etudiants')">Suivi</button></td>
+              </tr>
+              <tr>
+                <td>
+                  <div style="display:flex;align-items:center;gap:8px">
+                    <div class="stu-avatar" style="background:#e74c3c">KB</div>
+                    <div><div class="td-main">Karima Banali</div></div>
+                  </div>
+                </td>
+                <td>Djezzy</td>
+                <td style="font-size:11.5px">Jul — Sep 2026</td>
+                <td><span class="badge b-red">✗ Refusée</span></td>
+                <td><button class="btn btn-outline btn-sm" onclick="openModal('modal-motif')">Voir motif</button></td>
+              </tr>
+              <tr onclick="showPage('etudiants')">
+                <td>
+                  <div style="display:flex;align-items:center;gap:8px">
+                    <div class="stu-avatar" style="background:#f0a050">AH</div>
+                    <div><div class="td-main">Ahmed Hamidi</div></div>
+                  </div>
+                </td>
+                <td>Condor</td>
+                <td style="font-size:11.5px">Aoû — Oct 2026</td>
+                <td><span class="badge b-blue">© Admin</span></td>
+                <td><button class="btn btn-outline btn-sm" onclick="event.stopPropagation();showPage('etudiants')">Suivi</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <div class="card">
+            <div class="card-head"><div class="card-title">Activités mensuelles</div></div>
+            <div class="chart-wrap">
+              <div class="chart-legend">
+                <span><span class="leg-dot" style="background:var(--green)"></span>validées</span>
+                <span><span class="leg-dot" style="background:var(--orange)"></span>refusées</span>
+              </div>
+              <div class="chart-bars">
+                <div class="bar-group"><div class="bar" style="height:45px;background:var(--green)"></div><div class="bar" style="height:30px;background:var(--orange)"></div></div>
+                <div class="bar-group"><div class="bar" style="height:60px;background:var(--green)"></div><div class="bar" style="height:20px;background:var(--orange)"></div></div>
+                <div class="bar-group"><div class="bar" style="height:35px;background:var(--green)"></div><div class="bar" style="height:40px;background:var(--orange)"></div></div>
+                <div class="bar-group"><div class="bar" style="height:55px;background:var(--green)"></div><div class="bar" style="height:15px;background:var(--orange)"></div></div>
+              </div>
+              <div class="chart-labels">
+                <span class="chart-lbl">nov</span><span class="chart-lbl">déc</span><span class="chart-lbl">jan</span><span class="chart-lbl">fév</span>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head"><div class="card-title">Accès rapide</div></div>
+            <div class="qa-item" onclick="showPage('validation')"><span class="qa-icon">✦</span><div><div class="qa-label">Valider demandes</div></div><span class="qa-arrow">→</span></div>
+            <div class="qa-item" onclick="showPage('etudiants')"><span class="qa-icon">©</span><div><div class="qa-label">Suivi complet</div></div><span class="qa-arrow">→</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ PROPOSITIONS ══ -->
+    <div class="page" id="page-propositions">
+      <div class="page-header">
+        <div class="page-title">Mes propositions</div>
+      </div>
+      <div class="prop-tabs">
+        <button class="prop-tab active" onclick="filterProps(this,'all')">Toutes</button>
+        <button class="prop-tab" onclick="filterProps(this,'active')">Actives</button>
+        <button class="prop-tab" onclick="filterProps(this,'draft')">Brouillons</button>
+        <button class="btn btn-primary" style="margin-left:auto" onclick="showPage('nouvelle')">+ Nouvelle proposition</button>
+      </div>
+      <div class="prop-grid" id="prop-grid">
+        <div class="prop-card" data-type="active">
+          <div class="prop-card-head">
+            <div class="prop-card-title">Développement web full stack avec react et node.js</div>
+            <span class="prop-status ps-active">● Active</span>
+          </div>
+          <div class="prop-desc">Conception et développement d'une application web moderne en ...</div>
+          <div class="prop-tags"><span class="prop-tag">2-3 mois</span><span class="prop-tag">Informatique</span></div>
+          <div class="prop-footer">
+            <span class="prop-cands">5 candidatures</span>
+            <button class="btn btn-outline btn-sm" onclick="openEditModal('Développement web full stack avec react et node.js','2-3 mois','Informatique','Conception et développement d\'une application web full-stack moderne avec React et Node.js.')">Modifier</button>
+            <button class="btn btn-primary btn-sm" onclick="showPage('validation')">Demandes</button>
+          </div>
+        </div>
+        <div class="prop-card" data-type="active">
+          <div class="prop-card-head">
+            <div class="prop-card-title">Machine Learning appliqué sur datasets réels</div>
+            <span class="prop-status ps-active">● Active</span>
+          </div>
+          <div class="prop-desc">Application de techniques de machine learning sur des datasets réels pour ...</div>
+          <div class="prop-tags"><span class="prop-tag">2-4 mois</span><span class="prop-tag">Data Science</span></div>
+          <div class="prop-footer">
+            <span class="prop-cands">3 candidatures</span>
+            <button class="btn btn-outline btn-sm" onclick="openEditModal('Machine Learning appliqué sur datasets réels','2-4 mois','Data Science','Application de techniques de machine learning sur des datasets réels.')">Modifier</button>
+            <button class="btn btn-primary btn-sm" onclick="showPage('validation')">Demandes</button>
+          </div>
+        </div>
+        <div class="prop-card" data-type="draft">
+          <div class="prop-card-head">
+            <div class="prop-card-title">Intelligence Artificielle et vision par Ordinateur</div>
+            <span class="prop-status ps-draft">Brouillon</span>
+          </div>
+          <div class="prop-desc">Développement de modèles de visions par ordinateur pour la détection et ...</div>
+          <div class="prop-tags"><span class="prop-tag">2-6 mois</span><span class="prop-tag">IA</span></div>
+          <div class="prop-footer">
+            <span class="prop-cands" style="color:var(--text3)">pas encore publiée</span>
+            <button class="btn btn-outline btn-sm" onclick="openEditModal('Intelligence Artificielle et vision par Ordinateur','2-6 mois','IA','Développement de modèles de vision par ordinateur pour la détection et la reconnaissance d\'objets.')">Modifier</button>
+            <button class="btn btn-green btn-sm" onclick="toast('✅ Proposition publiée!')">Publier</button>
+          </div>
+        </div>
+        <div class="prop-card" data-type="draft">
+          <div class="prop-card-head">
+            <div class="prop-card-title">Sécurité des systèmes d'informations</div>
+            <span class="prop-status ps-draft">Brouillon</span>
+          </div>
+          <div class="prop-desc">Audit de sécurité, tests de pénétration et mise en places de politiques ...</div>
+          <div class="prop-tags"><span class="prop-tag">2-6 mois</span></div>
+          <div class="prop-footer">
+            <span class="prop-cands" style="color:var(--text3)">pas encore publiée</span>
+            <button class="btn btn-outline btn-sm" onclick="openEditModal('Sécurité des systèmes d\'informations','2-6 mois','Cybersécurité','Audit de sécurité, tests de pénétration et mise en place de politiques de sécurité.')">Modifier</button>
+            <button class="btn btn-green btn-sm" onclick="toast('✅ Proposition publiée!')">Publier</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ NOUVELLE PROPOSITION ══ -->
+    <div class="page" id="page-nouvelle">
+      <div class="page-header">
+        <div class="page-title">Créer une <span style="color:var(--blue-mid)">Proposition</span></div>
+        <div style="display:flex;align-items:center;gap:10px;margin-top:4px">
+          <div class="page-sub">Dimanche, 12 Avril 2026</div>
+        </div>
+      </div>
+      <div class="nform-card">
+        <div class="nform-section">
+          <div class="nform-section-title">Information du sujet</div>
+          <label class="nf-label">Titre du stage</label>
+          <input class="nf-input" type="text" placeholder="EX: Développement d'une application mobile avec Flutter">
+          <label class="nf-label">Niveau requis</label>
+          <select class="nf-select">
+            <option value="">Choisir un niveau</option>
+            <option>L3</option><option>M1</option><option>M2</option><option>3CS</option><option>2CS</option>
+          </select>
+          <label class="nf-label">Description détaillée</label>
+          <textarea class="nf-textarea" placeholder="Décrivez les objectifs, les missions, le contexte du stage..."></textarea>
+          <label class="nf-label">Technologies / Outils requis</label>
+          <input class="nf-input" type="text" placeholder="EX: Python, TensorFlow, Docker, AWS">
+          <div class="nf-hint">Séparez les technologies par des virgules</div>
+        </div>
+        <div class="nform-section">
+          <div class="nform-section-title">Conditions et modalités</div>
+          <div class="nf-row">
+            <div>
+              <label class="nf-label">Durée minimale</label>
+              <input class="nf-input" type="text" value="3 mois">
+            </div>
+            <div>
+              <label class="nf-label">Nombre de places</label>
+              <input class="nf-input" type="number" value="1" min="1">
+            </div>
+          </div>
+          <label class="nf-label">Prérequis et compétences attendus</label>
+          <textarea class="nf-textarea" placeholder="Listez les compétences, connaissances ou prérequis nécessaires..."></textarea>
+        </div>
+        <div class="nform-footer">
+          <button class="btn btn-outline" onclick="showPage('propositions')">Annuler</button>
+          <button class="btn btn-green" onclick="submitProposition()">✅ Publier la proposition</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ VALIDATION ══ -->
+    <div class="page" id="page-validation">
+      <div class="page-header">
+        <div class="page-title">Validation des demandes des étudiants</div>
+      </div>
+      <div class="filter-row">
+        <div class="filter-input"><span>🔍</span><input type="text" placeholder="Rechercher un étudiant, entreprise"></div>
+        <select class="filter-select"><option>En attente uniquement</option><option>Toutes</option><option>Validées</option><option>Refusées</option></select>
+      </div>
+
+      <div class="val-section-title">Demandes en attente <span style="font-weight:400;color:var(--text3);font-size:12px">4 demandes nécessitent votre décision</span></div>
+      <div class="card" style="margin-bottom:22px">
+        <table>
+          <thead>
+            <tr><th>Étudiant</th><th>Entreprise / Domaine</th><th>Période</th><th>Déposée le</th><th>Documents</th><th>Décision</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><div style="display:flex;align-items:center;gap:8px"><div class="stu-avatar" style="background:#7b68ee">AO</div><div class="td-main">Amina Ouali</div></div></td>
+              <td><div class="td-main">BNA Banque</div><div class="td-sub">Cyber sécurité</div></td>
+              <td style="font-size:11.5px">1 Juil — 30 Sep 2026</td>
+              <td style="font-size:11.5px">25 Mars 2026</td>
+              <td><div class="doc-icons"><div class="doc-icon-btn" onclick="toast('📄 Ouverture CV...')">📄</div><div class="doc-icon-btn" onclick="toast('👁 Aperçu document...')">👁</div></div></td>
+              <td><div class="action-btns">
+                <button class="btn btn-green btn-sm" onclick="toast('✅ Demande validée et transmise à l\'admin!')">✓ Valider</button>
+                <button class="btn btn-red btn-sm" onclick="openModal('modal-refus')">✗ Refuser</button>
+              </div></td>
+            </tr>
+            <tr>
+              <td><div style="display:flex;align-items:center;gap:8px"><div class="stu-avatar" style="background:#e09040">RB</div><div class="td-main">Riad Boukhalfa</div></div></td>
+              <td><div class="td-main">TotalEnergies Digital</div><div class="td-sub">Développement Web</div></td>
+              <td style="font-size:11.5px">15 Jun — 15 Sep 2026</td>
+              <td style="font-size:11.5px">24 Mars 2026</td>
+              <td><div class="doc-icons"><div class="doc-icon-btn" onclick="toast('📄 Ouverture CV...')">📄</div></div></td>
+              <td><div class="action-btns">
+                <button class="btn btn-green btn-sm" onclick="toast('✅ Demande validée!')">✓ Valider</button>
+                <button class="btn btn-red btn-sm" onclick="openModal('modal-refus')">✗ Refuser</button>
+              </div></td>
+            </tr>
+            <tr>
+              <td><div style="display:flex;align-items:center;gap:8px"><div class="stu-avatar" style="background:#e74c3c">SH</div><div class="td-main">Sara Halim</div></div></td>
+              <td><div class="td-main">Orange Business</div><div class="td-sub">Développement Mobile</div></td>
+              <td style="font-size:11.5px">01 Aoû — 31 Oct 2026</td>
+              <td style="font-size:11.5px">22 Mars 2026</td>
+              <td><div class="doc-icons"><div class="doc-icon-btn" onclick="toast('📄 Ouverture CV...')">📄</div><div class="doc-icon-btn" onclick="toast('👁 Aperçu...')">👁</div></div></td>
+              <td><div class="action-btns">
+                <button class="btn btn-green btn-sm" onclick="toast('✅ Demande validée!')">✓ Valider</button>
+                <button class="btn btn-red btn-sm" onclick="openModal('modal-refus')">✗ Refuser</button>
+              </div></td>
+            </tr>
+            <tr>
+              <td><div style="display:flex;align-items:center;gap:8px"><div class="stu-avatar" style="background:#2d5aa0">LM</div><div class="td-main">Lyes Madani</div></div></td>
+              <td><div class="td-main">Ooredoo</div><div class="td-sub">Réseaux & Télécoms</div></td>
+              <td style="font-size:11.5px">01 Jul — 30 Sep 2026</td>
+              <td style="font-size:11.5px">20 Mars 2026</td>
+              <td><div class="doc-icons"><div class="doc-icon-btn" onclick="toast('📄 Ouverture CV...')">📄</div></div></td>
+              <td><div class="action-btns">
+                <button class="btn btn-green btn-sm" onclick="toast('✅ Demande validée!')">✓ Valider</button>
+                <button class="btn btn-red btn-sm" onclick="openModal('modal-refus')">✗ Refuser</button>
+              </div></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="val-section-title">Demandes traitées <span style="font-weight:400;color:var(--text3);font-size:12px">8 demandes déjà traitées</span></div>
+      <div class="card">
+        <table>
+          <thead>
+            <tr><th>Étudiant</th><th>Entreprise</th><th>Date décision</th><th>Statut</th><th>Détail</th></tr>
+          </thead>
+          <tbody>
+            <tr onclick="showPage('etudiants')">
+              <td><div style="display:flex;align-items:center;gap:8px"><div class="stu-avatar" style="background:#27ae6e">YB</div><div class="td-main">Yassine Benkhalil</div></div></td>
+              <td>Sonatrach</td>
+              <td style="font-size:11.5px">18 Mars 2026</td>
+              <td><span class="badge b-green">✓ Validée → Admin</span></td>
+              <td><button class="btn btn-outline btn-sm" onclick="event.stopPropagation();showPage('etudiants')">Suivi</button></td>
+            </tr>
+            <tr>
+              <td><div style="display:flex;align-items:center;gap:8px"><div class="stu-avatar" style="background:#e74c3c">KB</div><div class="td-main">Karima Banali</div></div></td>
+              <td>Djezzy</td>
+              <td style="font-size:11.5px">15 Mars 2026</td>
+              <td><span class="badge b-red">✗ Refusée</span></td>
+              <td><button class="btn btn-outline btn-sm" onclick="openModal('modal-motif')">Voir motif</button></td>
+            </tr>
+            <tr onclick="showPage('etudiants')">
+              <td><div style="display:flex;align-items:center;gap:8px"><div class="stu-avatar" style="background:#f0a050">AH</div><div class="td-main">Ahmed Hamidi</div></div></td>
+              <td>Condor</td>
+              <td style="font-size:11.5px">12 Mars 2026</td>
+              <td><span class="badge b-blue">© Chez l'Admin</span></td>
+              <td><button class="btn btn-outline btn-sm" onclick="event.stopPropagation();showPage('etudiants')">Suivi</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ══ MES ÉTUDIANTS (SUIVI) ══ -->
+    <div class="page" id="page-etudiants">
+      <div class="page-header">
+        <div class="page-title">Voici l'état des demandes des étudiants</div>
+      </div>
+      <div class="suivi-layout">
+        <!-- LEFT: list -->
+        <div>
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+            <div>
+              <div style="font-size:14px;font-weight:700;color:var(--text)">Suivi des demandes</div>
+              <div style="font-size:11px;color:var(--text3)">Cliquez sur un étudiant pour voir son détail</div>
+            </div>
+            <div class="filter-input" style="margin-left:auto;max-width:180px">
+              <span>🔍</span>
+              <input type="text" placeholder="Rechercher..." oninput="filterSuivi(this.value)">
+            </div>
+          </div>
+
+          <div class="suivi-card selected" data-id="0" onclick="selectSuivi(this,0)">
+            <div class="stu-avatar" style="background:#27ae6e">YB</div>
+            <div class="suivi-info">
+              <div class="suivi-name">Yassine Benkhalil</div>
+              <div class="suivi-sub">Sonatrach — Data science</div>
+              <div class="suivi-progress">
+                <span class="prog-step ps-done">Déposée</span><span style="color:var(--text3);font-size:10px">›</span>
+                <span class="prog-step ps-done">Enseignant ✓</span><span style="color:var(--text3);font-size:10px">›</span>
+                <span class="prog-step ps-active">Admin ⏳</span><span style="color:var(--text3);font-size:10px">›</span>
+                <span class="prog-step ps-pending">Notifié</span>
+              </div>
+            </div>
+            <span class="badge b-blue">© Chez l'Admin</span>
+          </div>
+
+          <div class="suivi-card" data-id="1" onclick="selectSuivi(this,1)">
+            <div class="stu-avatar" style="background:#e74c3c">KB</div>
+            <div class="suivi-info">
+              <div class="suivi-name">Karima Benali</div>
+              <div class="suivi-sub">Djezzy — Réseaux</div>
+              <div class="suivi-progress">
+                <span class="prog-step ps-done">Déposée</span><span style="color:var(--text3);font-size:10px">›</span>
+                <span class="prog-step ps-done" style="background:var(--red-bg);color:#b03020">Enseignant ✗</span><span style="color:var(--text3);font-size:10px">›</span>
+                <span class="prog-step ps-pending">Admin</span><span style="color:var(--text3);font-size:10px">›</span>
+                <span class="prog-step ps-pending">Notifié</span>
+              </div>
+            </div>
+            <span class="badge b-red">✗ Refusée</span>
+          </div>
+
+          <div class="suivi-card" data-id="2" onclick="selectSuivi(this,2)">
+            <div class="stu-avatar" style="background:#7b68ee">AO</div>
+            <div class="suivi-info">
+              <div class="suivi-name">Amina Ouali</div>
+              <div class="suivi-sub">BNA Banque — Cyber sécurité</div>
+              <div class="suivi-progress">
+                <span class="prog-step ps-done">Déposée</span><span style="color:var(--text3);font-size:10px">›</span>
+                <span class="prog-step ps-active">Enseignant ⏳</span><span style="color:var(--text3);font-size:10px">›</span>
+                <span class="prog-step ps-pending">Admin</span><span style="color:var(--text3);font-size:10px">›</span>
+                <span class="prog-step ps-pending">Notifié</span>
+              </div>
+            </div>
+            <span class="badge b-orange">● En attente</span>
+          </div>
+
+          <div class="suivi-card" data-id="3" onclick="selectSuivi(this,3)">
+            <div class="stu-avatar" style="background:#f0a050">AH</div>
+            <div class="suivi-info">
+              <div class="suivi-name">Ahmed Hamidi</div>
+              <div class="suivi-sub">Condor — Systèmes embarqués</div>
+              <div class="suivi-progress">
+                <span class="prog-step ps-done">Déposée</span><span style="color:var(--text3);font-size:10px">›</span>
+                <span class="prog-step ps-done">Enseignant ✓</span><span style="color:var(--text3);font-size:10px">›</span>
+                <span class="prog-step ps-done">Admin ✓</span><span style="color:var(--text3);font-size:10px">›</span>
+                <span class="prog-step ps-done">Notifié ✓</span>
+              </div>
+            </div>
+            <span class="badge b-green">✓ Validée Admin</span>
+          </div>
+        </div>
+
+        <!-- RIGHT: dynamic detail panel -->
+        <div class="detail-card" id="detail-panel">
+          <!-- filled by JS -->
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ ATTESTATIONS ══ -->
+    <div class="page" id="page-attestations">
+      <div class="page-header">
+        <div class="page-title">Générer une attestation</div>
+      </div>
+      <div class="attest-layout">
+        <div class="attest-form-card">
+          <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:18px;">Informations</div>
+          <label class="form-label">Étudiant</label>
+          <input class="form-input" type="text" value="Mohamed KHALDI" oninput="updateAttest()" id="attest-stu">
+          <label class="form-label">Sujet du stage</label>
+          <input class="form-input" type="text" value="Analyse de Données et Machine Learning" oninput="updateAttest()" id="attest-sujet">
+          <label class="form-label">Période (début)</label>
+          <input class="form-input" type="text" value="01/02/2026" oninput="updateAttest()" id="attest-debut">
+          <label class="form-label">Période (fin)</label>
+          <input class="form-input" type="text" value="31/05/2026" oninput="updateAttest()" id="attest-fin">
+          <label class="form-label">Mention</label>
+          <select class="form-select" onchange="updateAttest()" id="attest-mention">
+            <option>Très Bien</option><option>Bien</option><option>Assez Bien</option><option>Passable</option>
+          </select>
+          <button class="btn btn-green" style="width:100%;justify-content:center;font-size:14px;padding:13px" onclick="toast('📤 Attestation envoyée à l\'administration!')">Envoyer à l'admin</button>
+        </div>
+
+        <div class="attest-preview">
+          <div class="attest-uni">Ecole supérieure en sciences et technologies de</div>
+          <div class="attest-uni">l'informatique et du numérique</div>
+          <div style="margin-top:14px"><div class="attest-title">ATTESTATION DE STAGES</div></div>
+          <div class="attest-divider"></div>
+          <div class="attest-body">
+            Je soussigne, <span class="hi">Dr. Ahmed Benali</span>, Maitre de Conférences, Département d'Informatique, atteste par la présente que l'étudiant(e) <span class="hi" id="preview-stu">Mohamed Khaldi</span>, inscrit(e) en <span class="hi">3CS</span>, a effectué un stage sous ma supervision au sein du laboratoire de recherche de l'école, portant sur le sujet :
+            <br><br>
+            <span class="hi">« <span id="preview-sujet">Analyse de Données et Machine Learning</span> »</span>
+            <br><br>
+            Ce stage s'est déroulé du <span class="hi" id="preview-debut">01 Février 2026</span> au <span class="hi" id="preview-fin">31 Mai 2026</span>, soit une période de <span class="hi">4 mois</span>.
+            <br><br>
+            Durant cette période, l'étudiant(e) a fait preuve de sérieux, d'initiative et de compétences techniques remarquables. Son travail a été jugé de manière <span class="hi" id="preview-mention">Très Bien</span>.
+            <br><br>
+            Cette attestation est délivrée en vue de l'obtention du crédit de stage académique et pour servir et valoir ce que de droit.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ NOTIFICATIONS ══ -->
+    <div class="page" id="page-notifications">
+      <div class="page-header">
+        <div class="page-title">Mes Notifications</div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:flex-end;margin-bottom:14px">
+        <div id="notif-live-date" style="background:var(--blue-mid);color:#fff;border-radius:99px;padding:6px 18px;font-size:13px;font-weight:600;"></div>
+      </div>
+      <div class="notif-tabs">
+        <button class="notif-tab active" onclick="filterNotif(this,'all')">Toutes (5)</button>
+        <button class="notif-tab" onclick="filterNotif(this,'unread')">Non lues (3)</button>
+        <button class="mark-btn" onclick="toast('✅ Toutes marquées comme lues')">Tout marquer comme lu</button>
+      </div>
+      <div id="notif-list">
+        <div class="notif-item unread" data-read="false">
+          <div class="ni-icon" style="background:rgba(74,144,217,0.12)">👤</div>
+          <div style="flex:1">
+            <div class="ni-text"><strong>Sara Mekki</strong> a soumis une demande pour votre stage "Développement web Full-Stack"</div>
+            <div class="ni-time">Aujourd'hui à 09:10</div>
+          </div>
+          <div class="ni-dot"></div>
+        </div>
+        <div class="notif-item unread" data-read="false">
+          <div class="ni-icon" style="background:var(--green-bg)">✓</div>
+          <div style="flex:1">
+            <div class="ni-text">L'administration <strong>a validé</strong> votre proposition "Analyse de Données et Machine Learning"</div>
+            <div class="ni-time">Aujourd'hui à 11:30</div>
+          </div>
+          <div class="ni-dot"></div>
+        </div>
+        <div class="notif-item unread" data-read="false">
+          <div class="ni-icon" style="background:var(--green-bg)">✓</div>
+          <div style="flex:1">
+            <div class="ni-text"><strong>Lina Bouzid</strong> a confirmé son stage "Sécurité des systèmes d'information"</div>
+            <div class="ni-time">Il y a 3 jours · 09 Avr 2026 à 13:05</div>
+          </div>
+          <div class="ni-dot"></div>
+        </div>
+        <div class="notif-item" data-read="true">
+          <div class="ni-icon" style="background:var(--orange-bg)">●</div>
+          <div style="flex:1">
+            <div class="ni-text">Rappel : <strong>Rachid Touati</strong> doit soumettre son rapport d'étape avant le 15 Avril</div>
+            <div class="ni-time">Il y a 5 jours · 08 Avr 2026 à 15:33</div>
+          </div>
+        </div>
+        <div class="notif-item" data-read="true">
+          <div class="ni-icon" style="background:var(--green-bg)">✓</div>
+          <div style="flex:1">
+            <div class="ni-text"><strong>Karim Aouad</strong> a soumis une demande pour votre stage "Développement web Full-Stack"</div>
+            <div class="ni-time">Il y a une semaine · 06 Avr 2026 à 08:03</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ PROFIL ══ -->
+    <div class="page" id="page-profil">
+      <div class="page-header">
+        <div class="page-title">Mon profil</div>
+        <div class="page-sub">Gérez vos informations personnelles et académiques.</div>
+      </div>
+      <div class="prof-header">
+        <div class="prof-av">AB</div>
+        <div style="flex:1">
+          <div class="prof-name">Ahmed Benali</div>
+          <div class="prof-email">a.benali@estin.dz</div>
+          <div class="prof-chips">
+            <span class="prof-chip"><span>04</span> Propositions</span>
+            <span class="prof-chip"><span>03</span> Encadrements</span>
+            <span class="prof-chip"><span style="color:var(--green)">12</span> Total stages</span>
+          </div>
+        </div>
+      </div>
+      <div class="info-card">
+        <div class="ic-title">Informations personnelles</div>
+        <div class="ic-grid">
+          <div class="ic-field"><label>Nom</label><div class="val">Benali</div></div>
+          <div class="ic-field"><label>Prénom</label><div class="val">Ahmed</div></div>
+          <div class="ic-field"><label>Email</label><div class="val">a.benali@estin.dz</div></div>
+          <div class="ic-field"><label>Téléphone</label><div class="val">+213 555 123 456</div></div>
+          <div class="ic-field"><label>Grade</label><div class="val">Maître de conférence A</div></div>
+        </div>
+      </div>
+      <div class="info-card">
+        <div class="ic-title">Domaines d'expertise</div>
+        <div class="ic-field">
+          <label>Spécialités et mots clés</label>
+          <div class="val" style="margin-top:6px;display:flex;flex-wrap:wrap;gap:8px">
+            <span class="prop-tag" style="background:rgba(74,144,217,0.12);color:var(--blue-mid)">Machine Learning</span>
+            <span class="prop-tag" style="background:rgba(74,144,217,0.12);color:var(--blue-mid)">Data Science</span>
+            <span class="prop-tag" style="background:rgba(74,144,217,0.12);color:var(--blue-mid)">Big Data</span>
+            <span class="prop-tag" style="background:rgba(74,144,217,0.12);color:var(--blue-mid)">Python</span>
+            <span class="prop-tag" style="background:rgba(74,144,217,0.12);color:var(--blue-mid)">Intelligence Artificielle</span>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:flex-end">
+        <button class="btn btn-outline" onclick="openProfModal()">✏️ Modifier le profil</button>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<!-- MODAL REFUS -->
+<div class="modal-overlay" id="modal-refus" onclick="this.classList.remove('open')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-title">✗ Motif de refus</div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:12px">Cette information sera transmise à l'étudiant avec la décision.</div>
+    <label class="form-label">Sélectionner un motif *</label>
+    <select class="form-select" style="margin-bottom:10px">
+      <option>Profil ne correspond pas au niveau requis</option>
+      <option>Capacité d'encadrement atteinte</option>
+      <option>Dossier incomplet</option>
+      <option>Sujet non conforme</option>
+      <option>Autre</option>
+    </select>
+    <label class="form-label">Commentaire additionnel</label>
+    <textarea class="form-textarea" placeholder="Expliquez votre décision..."></textarea>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-refus')">Annuler</button>
+      <button class="btn btn-red" onclick="closeModal('modal-refus');toast('❌ Refus notifié à l\'étudiant')">Confirmer le refus</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL MOTIF -->
+<div class="modal-overlay" id="modal-motif" onclick="this.classList.remove('open')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-title">Motif de refus — Karima Banali</div>
+    <div style="background:var(--red-bg);border-radius:10px;padding:14px;font-size:13px;color:#b03020;margin-bottom:14px">
+      <strong>Motif :</strong> Profil de l'étudiant ne correspond pas au niveau requis (M2 spécialité sécurité).
+    </div>
+    <div style="font-size:12px;color:var(--text3)">Décision prise le 15 Mars 2026</div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-motif')">Fermer</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+  function showPage(id) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.sb-item').forEach(i => i.classList.remove('active'));
+    const page = document.getElementById('page-' + id);
+    if (page) page.classList.add('active');
+    document.querySelectorAll('.sb-item').forEach(item => {
+      if ((item.getAttribute('onclick')||'').includes("'"+id+"'")) item.classList.add('active');
+    });
+    window.scrollTo(0,0);
+  }
+
+  function filterProps(btn, type) {
+    document.querySelectorAll('.prop-tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.prop-card[data-type]').forEach(card => {
+      card.style.display = (type === 'all' || card.dataset.type === type) ? 'block' : 'none';
+    });
+  }
+
+  function filterNotif(btn, type) {
+    document.querySelectorAll('.notif-tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.notif-item').forEach(item => {
+      item.style.display = (type === 'unread' && item.dataset.read === 'true') ? 'none' : 'flex';
+    });
+  }
+
+  // ── DATA: one object per student ──
+  const etudiantsData = [
+    {
+      initials: 'YB',
+      color: '#27ae6e',
+      name: 'Yassine Benkhalil',
+      sub: 'Sonatrach — Data science · Jun — Aoû 2026',
+      niveau: 'Master 1',
+      email: 'y.benkhalil@estin.dz',
+      sujet: 'Analyse prédictive de données industrielles',
+      periode: 'Juin — Août 2026',
+      timeline: [
+        { dot:'#27ae6e', date:'● 10 Mars 2026',   title:'📥 Demande déposée',         desc:"L'étudiant a soumis sa demande avec les pièces justificatives." },
+        { dot:'#27ae6e', date:'● 18 Mars 2026',   title:'✓ Validée par l\'enseignant', desc:'Dr. Brahim Mansouri a approuvé la demande et l\'a transmise à l\'administration.' },
+        { dot:'#e09040', date:'● En cours ...',   title:'© En cours chez l\'administration', desc:'L\'administration examine la décision avant notification finale.' },
+        { dot:'rgba(30,58,110,0.15)', date:'—',   title:'✉ Notification à l\'étudiant', desc:'En attente de la décision de l\'administration.', faded:true }
+      ]
+    },
+    {
+      initials: 'KB',
+      color: '#e74c3c',
+      name: 'Karima Benali',
+      sub: 'Djezzy — Réseaux · Juil — Sep 2026',
+      niveau: 'Licence 3',
+      email: 'k.benali@estin.dz',
+      sujet: 'Optimisation des réseaux télécoms',
+      periode: 'Juillet — Septembre 2026',
+      timeline: [
+        { dot:'#27ae6e', date:'● 15 Mars 2026',  title:'📥 Demande déposée',     desc:"L'étudiant a soumis sa demande avec les pièces justificatives." },
+        { dot:'#e74c3c', date:'● 20 Mars 2026',  title:'✗ Refusée par l\'enseignant', desc:'Motif : Le profil ne correspond pas au niveau requis (M2 spécialité sécurité).' },
+        { dot:'rgba(30,58,110,0.15)', date:'—',  title:'Admin', desc:'Non transmise — demande stoppée à l\'étape enseignant.', faded:true },
+        { dot:'rgba(30,58,110,0.15)', date:'—',  title:'✉ Étudiant notifié du refus', desc:'Notification avec motif envoyée le 20 Mars 2026.', faded:false }
+      ]
+    },
+    {
+      initials: 'AO',
+      color: '#7b68ee',
+      name: 'Amina Ouali',
+      sub: 'BNA Banque — Cyber sécurité · 1 Juil — 30 Sep 2026',
+      niveau: 'Master 2',
+      email: 'a.ouali@estin.dz',
+      sujet: 'Audit de sécurité système bancaire',
+      periode: '1er Juillet — 30 Septembre 2026',
+      timeline: [
+        { dot:'#27ae6e', date:'● 25 Mars 2026',  title:'📥 Demande déposée',     desc:"L'étudiante a soumis sa demande avec CV et lettre de motivation." },
+        { dot:'#e09040', date:'● En cours ...',  title:'⏳ En attente de validation enseignant', desc:'La demande est en cours d\'examen par Dr. Ahmed Benali.' },
+        { dot:'rgba(30,58,110,0.15)', date:'—',  title:'Admin', desc:'En attente — pas encore transmise.', faded:true },
+        { dot:'rgba(30,58,110,0.15)', date:'—',  title:'✉ Notification étudiant', desc:'Sera envoyée après décision finale.', faded:true }
+      ]
+    },
+    {
+      initials: 'AH',
+      color: '#f0a050',
+      name: 'Ahmed Hamidi',
+      sub: 'Condor — Systèmes embarqués · Aoû — Oct 2026',
+      niveau: 'Master 1',
+      email: 'a.hamidi@estin.dz',
+      sujet: 'Développement firmware systèmes embarqués',
+      periode: 'Août — Octobre 2026',
+      timeline: [
+        { dot:'#27ae6e', date:'● 12 Mars 2026',  title:'📥 Demande déposée',          desc:"L'étudiant a soumis sa demande avec tous les documents requis." },
+        { dot:'#27ae6e', date:'● 15 Mars 2026',  title:'✓ Validée par l\'enseignant',  desc:'Dr. Ahmed Benali a approuvé la demande et l\'a transmise à l\'administration.' },
+        { dot:'#27ae6e', date:'● 20 Mars 2026',  title:'✓ Approuvée par l\'admin',     desc:'L\'administration a validé définitivement le dossier de stage.' },
+        { dot:'#27ae6e', date:'● 21 Mars 2026',  title:'✉ Étudiant notifié',           desc:'Ahmed Hamidi a reçu la confirmation par email et sur la plateforme.' }
+      ]
+    }
+  ];
+
+  function renderDetailPanel(idx) {
+    const s = etudiantsData[idx];
+    const tlHtml = s.timeline.map(t => `
+      <div class="tl-item">
+        <div class="tl-dot" style="background:${t.dot}"></div>
+        <div class="tl-content">
+          <div class="tl-date">${t.date}</div>
+          <div class="tl-title" style="${t.faded ? 'color:var(--text3)' : ''}">${t.title}</div>
+          <div class="tl-desc" style="${t.faded ? 'color:var(--text3)' : ''}">${t.desc}</div>
+        </div>
+      </div>`).join('');
+
+    document.getElementById('detail-panel').innerHTML = `
+      <div class="detail-stu-head">
+        <div class="stu-avatar" style="background:${s.color};width:40px;height:40px;font-size:13px">${s.initials}</div>
+        <div>
+          <div style="font-size:13px;font-weight:700;color:var(--text)">${s.name}</div>
+          <div style="font-size:11px;color:var(--text3)">${s.sub}</div>
+        </div>
+      </div>
+      <div style="background:var(--bg2);border-radius:9px;padding:10px 13px;margin-bottom:14px;display:grid;grid-template-columns:1fr 1fr;gap:8px;border:1px solid rgba(30,58,110,0.07)">
+        <div><div style="font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.6px">Niveau</div><div style="font-size:12px;font-weight:600;color:var(--text);margin-top:2px">${s.niveau}</div></div>
+        <div><div style="font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.6px">Période</div><div style="font-size:12px;font-weight:600;color:var(--text);margin-top:2px">${s.periode}</div></div>
+        <div style="grid-column:span 2"><div style="font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.6px">Sujet</div><div style="font-size:12px;font-weight:600;color:var(--blue-mid);margin-top:2px">${s.sujet}</div></div>
+        <div style="grid-column:span 2"><div style="font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.6px">Email</div><div style="font-size:12px;color:var(--text2);margin-top:2px">${s.email}</div></div>
+      </div>
+      <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:10px">Historique du dossier</div>
+      <div class="timeline">${tlHtml}</div>`;
+  }
+
+  function selectSuivi(card, idx) {
+    document.querySelectorAll('.suivi-card').forEach(c => c.classList.remove('selected'));
+    card.classList.add('selected');
+    // animate panel
+    const panel = document.getElementById('detail-panel');
+    panel.style.opacity = '0';
+    panel.style.transform = 'translateY(10px)';
+    setTimeout(() => {
+      renderDetailPanel(idx);
+      panel.style.transition = 'opacity .25s ease, transform .25s ease';
+      panel.style.opacity = '1';
+      panel.style.transform = 'translateY(0)';
+    }, 120);
+  }
+
+  function filterSuivi(query) {
+    const q = query.toLowerCase();
+    document.querySelectorAll('.suivi-card').forEach(card => {
+      const name = card.querySelector('.suivi-name').textContent.toLowerCase();
+      const sub  = card.querySelector('.suivi-sub').textContent.toLowerCase();
+      card.style.display = (name.includes(q) || sub.includes(q)) ? 'flex' : 'none';
+    });
+  }
+
+  // init detail panel on load
+  document.addEventListener('DOMContentLoaded', () => renderDetailPanel(0));
+
+  function openModal(id) { document.getElementById(id).classList.add('open'); }
+  function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+  function updateAttest() {
+    const stu = document.getElementById('attest-stu').value;
+    const sujet = document.getElementById('attest-sujet').value;
+    const mention = document.getElementById('attest-mention').value;
+    document.getElementById('preview-stu').textContent = stu;
+    document.getElementById('preview-sujet').textContent = sujet;
+    document.getElementById('preview-mention').textContent = mention;
+  }
+
+  function submitProposition() {
+    toast('✅ Proposition publiée avec succès!');
+    setTimeout(() => showPage('propositions'), 1200);
+  }
+
+  let toastTimer;
+  function toast(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.style.transform = 'translateY(0)';
+    el.style.opacity = '1';
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => {
+      el.style.transform = 'translateY(80px)';
+      el.style.opacity = '0';
+    }, 3000);
+  }
+
+  // ── LIVE DATE ──
+  function setLiveDate() {
+    const el = document.getElementById('notif-live-date');
+    if (!el) return;
+    const now = new Date();
+    const days = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+    const months = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+    el.textContent = `${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
+  }
+
+  // ── EDIT MODAL ──
+  function openEditModal(titre, duree, domaine, desc) {
+    document.getElementById('edit-titre').value = titre;
+    document.getElementById('edit-duree').value = duree;
+    document.getElementById('edit-domaine').value = domaine;
+    document.getElementById('edit-desc').value = desc;
+    document.getElementById('modal-edit-overlay').style.display = 'flex';
+  }
+
+  function closeEditModal() {
+    document.getElementById('modal-edit-overlay').style.display = 'none';
+  }
+
+  function saveEdit() {
+    closeEditModal();
+    toast('✅ Proposition modifiée avec succès !');
+  }
+
+  function openProfModal()  { document.getElementById('modal-profil-overlay').style.display = 'flex'; }
+  function closeProfModal() { document.getElementById('modal-profil-overlay').style.display = 'none'; }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    renderDetailPanel(0);
+    setLiveDate();
+  });
+</script>
+
+<!-- MODAL MODIFIER PROPOSITION -->
+<div id="modal-edit-overlay" onclick="closeEditModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);backdrop-filter:blur(4px);z-index:200;align-items:center;justify-content:center;">
+  <div onclick="event.stopPropagation()" style="background:#fff;border-radius:18px;width:520px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.2);animation:popIn .22s ease">
+    <div style="background:var(--blue-dark);padding:22px 26px;border-radius:18px 18px 0 0;display:flex;align-items:center;justify-content:space-between">
+      <div style="font-family:'Lora',serif;font-size:17px;font-weight:600;color:#fff">✏️ Modifier la proposition</div>
+      <div onclick="closeEditModal()" style="width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;cursor:pointer;color:#fff;font-size:16px;">✕</div>
+    </div>
+    <div style="padding:24px 26px;display:flex;flex-direction:column;gap:14px">
+      <div>
+        <label style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.7px;display:block;margin-bottom:6px">Titre du stage</label>
+        <input id="edit-titre" type="text" style="width:100%;background:var(--bg2);border:1px solid rgba(30,58,110,0.15);border-radius:9px;padding:10px 13px;font-size:13.5px;font-family:inherit;color:var(--text);outline:none;">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+        <div>
+          <label style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.7px;display:block;margin-bottom:6px">Durée</label>
+          <input id="edit-duree" type="text" style="width:100%;background:var(--bg2);border:1px solid rgba(30,58,110,0.15);border-radius:9px;padding:10px 13px;font-size:13.5px;font-family:inherit;color:var(--text);outline:none;">
+        </div>
+        <div>
+          <label style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.7px;display:block;margin-bottom:6px">Domaine</label>
+          <input id="edit-domaine" type="text" style="width:100%;background:var(--bg2);border:1px solid rgba(30,58,110,0.15);border-radius:9px;padding:10px 13px;font-size:13.5px;font-family:inherit;color:var(--text);outline:none;">
+        </div>
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.7px;display:block;margin-bottom:6px">Description</label>
+        <textarea id="edit-desc" rows="4" style="width:100%;background:var(--bg2);border:1px solid rgba(30,58,110,0.15);border-radius:9px;padding:10px 13px;font-size:13.5px;font-family:inherit;color:var(--text);outline:none;resize:vertical;line-height:1.6"></textarea>
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.7px;display:block;margin-bottom:6px">Nombre de places</label>
+        <input type="number" min="1" value="3" style="width:100%;background:var(--bg2);border:1px solid rgba(30,58,110,0.15);border-radius:9px;padding:10px 13px;font-size:13.5px;font-family:inherit;color:var(--text);outline:none;">
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;padding-top:8px;border-top:1px solid rgba(30,58,110,0.08)">
+        <button onclick="closeEditModal()" style="padding:10px 20px;border-radius:9px;border:1px solid rgba(30,58,110,0.15);background:#fff;color:var(--text2);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Annuler</button>
+        <button onclick="saveEdit()" style="padding:10px 22px;border-radius:9px;border:none;background:var(--blue-dark);color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">💾 Enregistrer</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL MODIFIER PROFIL -->
+<div id="modal-profil-overlay" onclick="closeProfModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);backdrop-filter:blur(4px);z-index:200;align-items:center;justify-content:center;">
+  <div onclick="event.stopPropagation()" style="background:#fff;border-radius:18px;width:520px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.2);animation:popIn .22s ease">
+    <div style="background:var(--blue-dark);padding:22px 26px;border-radius:18px 18px 0 0;display:flex;align-items:center;justify-content:space-between">
+      <div style="font-family:'Lora',serif;font-size:17px;font-weight:600;color:#fff">✏️ Modifier mon profil</div>
+      <div onclick="closeProfModal()" style="width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;cursor:pointer;color:#fff;font-size:16px;">✕</div>
+    </div>
+    <div style="padding:24px 26px;display:flex;flex-direction:column;gap:14px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+        <div>
+          <label style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.7px;display:block;margin-bottom:6px">Nom</label>
+          <input type="text" value="Benali" style="width:100%;background:var(--bg2);border:1px solid rgba(30,58,110,0.15);border-radius:9px;padding:10px 13px;font-size:13.5px;font-family:inherit;color:var(--text);outline:none;">
+        </div>
+        <div>
+          <label style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.7px;display:block;margin-bottom:6px">Prénom</label>
+          <input type="text" value="Ahmed" style="width:100%;background:var(--bg2);border:1px solid rgba(30,58,110,0.15);border-radius:9px;padding:10px 13px;font-size:13.5px;font-family:inherit;color:var(--text);outline:none;">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+        <div>
+          <label style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.7px;display:block;margin-bottom:6px">Email</label>
+          <input type="email" value="a.benali@estin.dz" style="width:100%;background:var(--bg2);border:1px solid rgba(30,58,110,0.15);border-radius:9px;padding:10px 13px;font-size:13.5px;font-family:inherit;color:var(--text);outline:none;">
+        </div>
+        <div>
+          <label style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.7px;display:block;margin-bottom:6px">Téléphone</label>
+          <input type="tel" value="+213 555 123 456" style="width:100%;background:var(--bg2);border:1px solid rgba(30,58,110,0.15);border-radius:9px;padding:10px 13px;font-size:13.5px;font-family:inherit;color:var(--text);outline:none;">
+        </div>
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.7px;display:block;margin-bottom:6px">Grade</label>
+        <select style="width:100%;background:var(--bg2);border:1px solid rgba(30,58,110,0.15);border-radius:9px;padding:10px 13px;font-size:13.5px;font-family:inherit;color:var(--text);outline:none;">
+          <option selected>Maître de conférence A</option>
+          <option>Maître de conférence B</option>
+          <option>Professeur</option>
+          <option>Maître assistant A</option>
+          <option>Maître assistant B</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.7px;display:block;margin-bottom:6px">Spécialités / Mots clés</label>
+        <input type="text" value="Machine Learning, Data Science, Big Data, Python, Intelligence Artificielle" style="width:100%;background:var(--bg2);border:1px solid rgba(30,58,110,0.15);border-radius:9px;padding:10px 13px;font-size:13.5px;font-family:inherit;color:var(--text);outline:none;">
+        <div style="font-size:11px;color:var(--text3);margin-top:5px">Séparez les spécialités par des virgules</div>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;padding-top:8px;border-top:1px solid rgba(30,58,110,0.08)">
+        <button onclick="closeProfModal()" style="padding:10px 20px;border-radius:9px;border:1px solid rgba(30,58,110,0.15);background:#fff;color:var(--text2);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Annuler</button>
+        <button onclick="closeProfModal();toast('✅ Profil mis à jour avec succès !')" style="padding:10px 22px;border-radius:9px;border:none;background:var(--blue-dark);color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">💾 Enregistrer</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
+

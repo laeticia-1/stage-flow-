@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StageFlow — Gestion intelligente des stages</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Lora:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --blue-dark: #1e3a6e;
+    --blue-mid: #2d5aa0;
+    --blue-light: #4a90d9;
+    --blue-pale: #c8dff5;
+    --bg: #ddeeff;
+    --bg2: #e8f2fc;
+    --white: #ffffff;
+    --text: #1a2e4a;
+    --text2: #4a6080;
+    --text3: #7a95b0;
+    --green: #2ecc7a;
+    --orange: #f0a050;
+    --accent: #2d5aa0;
+    --radius: 14px;
+    --shadow: 0 4px 24px rgba(30,58,110,0.10);
+    --shadow-lg: 0 8px 40px rgba(30,58,110,0.15);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* ── NAVBAR ── */
+  nav {
+    background: var(--white);
+    border-bottom: 1px solid rgba(30,58,110,0.08);
+    position: sticky; top: 0; z-index: 100;
+    box-shadow: 0 2px 12px rgba(30,58,110,0.07);
+  }
+
+  .nav-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 28px;
+    height: 68px;
+    display: flex;
+    align-items: center;
+    gap: 0;
+  }
+
+  .nav-logo {
+    display: flex; align-items: center; gap: 10px;
+    text-decoration: none;
+    margin-right: auto;
+  }
+
+  .nav-logo-icon {
+    width: 40px; height: 40px;
+    background: linear-gradient(135deg, var(--blue-mid), var(--blue-light));
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+  }
+
+  .nav-logo-text {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 800;
+    font-size: 20px;
+    color: var(--blue-dark);
+    line-height: 1;
+  }
+
+  .nav-logo-sub {
+    font-size: 10px;
+    color: var(--text3);
+    font-weight: 500;
+    display: block;
+    letter-spacing: .5px;
+  }
+
+  .nav-links {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-right: 24px;
+  }
+
+  .nav-links a {
+    text-decoration: none;
+    color: var(--text2);
+    font-size: 14px;
+    font-weight: 500;
+    padding: 8px 16px;
+    border-radius: 8px;
+    transition: all .2s;
+  }
+
+  .nav-links a:hover { background: var(--bg2); color: var(--blue-dark); }
+
+  .btn-connect {
+    background: var(--blue-dark);
+    color: var(--white) !important;
+    padding: 10px 22px !important;
+    border-radius: 10px !important;
+    font-weight: 600 !important;
+    font-size: 14px !important;
+    transition: all .2s !important;
+    text-decoration: none;
+  }
+
+  .btn-connect:hover {
+    background: var(--blue-mid) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(30,58,110,0.2) !important;
+  }
+
+  /* ── HERO ── */
+  .hero {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 72px 28px 56px;
+    display: grid;
+    grid-template-columns: 1fr 420px;
+    gap: 48px;
+    align-items: center;
+  }
+
+  .hero-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--white);
+    border: 1px solid var(--blue-pale);
+    border-radius: 99px;
+    padding: 6px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--blue-mid);
+    margin-bottom: 22px;
+    letter-spacing: .3px;
+  }
+
+  .hero-tag::before {
+    content: '';
+    width: 7px; height: 7px;
+    background: var(--blue-light);
+    border-radius: 50%;
+  }
+
+  .hero-title {
+    font-family: 'Lora', serif;
+    font-size: clamp(36px, 4vw, 52px);
+    font-weight: 600;
+    line-height: 1.18;
+    color: var(--text);
+    margin-bottom: 18px;
+  }
+
+  .hero-title .accent-blue { color: var(--blue-mid); font-style: italic; }
+  .hero-title .accent-green { color: #1a8a52; font-style: italic; }
+
+  .hero-desc {
+    font-size: 16px;
+    color: var(--text2);
+    line-height: 1.7;
+    max-width: 460px;
+    margin-bottom: 36px;
+  }
+
+  .hero-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--blue-dark);
+    color: var(--white);
+    text-decoration: none;
+    padding: 14px 28px;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 600;
+    transition: all .2s;
+    box-shadow: 0 4px 20px rgba(30,58,110,0.25);
+  }
+
+  .hero-cta:hover {
+    background: var(--blue-mid);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 28px rgba(30,58,110,0.3);
+  }
+
+  /* Steps card */
+  .steps-card {
+    background: var(--white);
+    border-radius: 20px;
+    padding: 28px;
+    box-shadow: var(--shadow-lg);
+    border: 1px solid rgba(30,58,110,0.07);
+  }
+
+  .steps-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 20px;
+    text-align: center;
+    letter-spacing: .2px;
+  }
+
+  .step-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 14px 16px;
+    border-radius: 12px;
+    background: var(--bg2);
+    border: 1px solid rgba(30,58,110,0.06);
+    margin-bottom: 12px;
+    transition: all .2s;
+    cursor: default;
+  }
+
+  .step-item:last-child { margin-bottom: 0; }
+
+  .step-item:hover {
+    background: var(--white);
+    box-shadow: var(--shadow);
+    transform: translateX(4px);
+  }
+
+  .step-num {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px;
+    font-weight: 800;
+    flex-shrink: 0;
+  }
+
+  .step-num.s1 { background: rgba(46,204,122,0.15); color: #1a8a52; }
+  .step-num.s2 { background: rgba(240,160,80,0.15); color: #c07020; }
+  .step-num.s3 { background: rgba(74,144,217,0.15); color: var(--blue-mid); }
+
+  .step-name { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 3px; }
+  .step-desc { font-size: 12px; color: var(--text3); line-height: 1.45; }
+
+  /* ── FEATURES ── */
+  .section {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 64px 28px;
+  }
+
+  .section-label {
+    text-align: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--blue-mid);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  .section-title {
+    text-align: center;
+    font-family: 'Lora', serif;
+    font-size: clamp(24px, 3vw, 34px);
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 48px;
+  }
+
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+
+  .feature-card {
+    background: var(--white);
+    border-radius: var(--radius);
+    padding: 28px 24px;
+    border: 1px solid rgba(30,58,110,0.07);
+    box-shadow: var(--shadow);
+    transition: all .25s;
+  }
+
+  .feature-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--blue-pale);
+  }
+
+  .feature-icon {
+    width: 48px; height: 48px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    margin-bottom: 18px;
+  }
+
+  .fi-green { background: rgba(46,204,122,0.12); }
+  .fi-blue { background: rgba(74,144,217,0.12); }
+  .fi-orange { background: rgba(240,160,80,0.12); }
+
+  .feature-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 10px;
+    line-height: 1.3;
+  }
+
+  .feature-desc {
+    font-size: 13.5px;
+    color: var(--text2);
+    line-height: 1.65;
+  }
+
+  /* ── ACTORS ── */
+  .actors-section {
+    background: var(--white);
+    border-top: 1px solid rgba(30,58,110,0.07);
+    border-bottom: 1px solid rgba(30,58,110,0.07);
+  }
+
+  .actors-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+
+  .actor-card {
+    background: var(--bg2);
+    border-radius: var(--radius);
+    padding: 28px 24px;
+    border: 1px solid rgba(30,58,110,0.08);
+    transition: all .25s;
+    cursor: pointer;
+  }
+
+  .actor-card:hover {
+    background: var(--white);
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-3px);
+  }
+
+  .actor-avatar {
+    width: 48px; height: 48px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    font-weight: 800;
+    margin-bottom: 16px;
+    border: 2px solid rgba(30,58,110,0.15);
+  }
+
+  .av-e { background: rgba(46,204,122,0.12); color: #1a8a52; border-color: rgba(46,204,122,0.3); }
+  .av-p { background: rgba(240,160,80,0.12); color: #c07020; border-color: rgba(240,160,80,0.3); }
+  .av-a { background: rgba(74,144,217,0.12); color: var(--blue-mid); border-color: rgba(74,144,217,0.3); }
+
+  .actor-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 10px;
+  }
+
+  .actor-desc {
+    font-size: 13px;
+    color: var(--text2);
+    line-height: 1.6;
+  }
+
+  /* ── CTA BOTTOM ── */
+  .cta-section {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 56px 28px 80px;
+  }
+
+  .cta-box {
+    background: var(--blue-dark);
+    border-radius: 24px;
+    padding: 56px 48px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .cta-box::before {
+    content: '';
+    position: absolute;
+    top: -60px; right: -60px;
+    width: 220px; height: 220px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.05);
+  }
+
+  .cta-box::after {
+    content: '';
+    position: absolute;
+    bottom: -40px; left: -40px;
+    width: 160px; height: 160px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.04);
+  }
+
+  .cta-title {
+    font-family: 'Lora', serif;
+    font-size: clamp(22px, 3vw, 30px);
+    font-weight: 600;
+    color: var(--white);
+    margin-bottom: 14px;
+  }
+
+  .cta-desc {
+    font-size: 15px;
+    color: rgba(255,255,255,0.7);
+    margin-bottom: 32px;
+    max-width: 440px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .cta-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--white);
+    color: var(--blue-dark);
+    text-decoration: none;
+    padding: 14px 32px;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 700;
+    transition: all .2s;
+    position: relative; z-index: 1;
+  }
+
+  .cta-btn:hover {
+    background: var(--bg);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 900px) {
+    .hero { grid-template-columns: 1fr; gap: 32px; }
+    .steps-card { max-width: 500px; }
+    .features-grid { grid-template-columns: 1fr; }
+    .actors-grid { grid-template-columns: 1fr; }
+    .nav-links { display: none; }
+  }
+
+  @media (max-width: 600px) {
+    .hero { padding: 40px 16px 32px; }
+    .section { padding: 40px 16px; }
+    .cta-box { padding: 36px 20px; }
+    .cta-section { padding: 32px 16px 48px; }
+  }
+
+  /* Animations */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .hero-left { animation: fadeUp .6s ease both; }
+  .steps-card { animation: fadeUp .6s .15s ease both; }
+  .feature-card:nth-child(1) { animation: fadeUp .5s .1s ease both; }
+  .feature-card:nth-child(2) { animation: fadeUp .5s .2s ease both; }
+  .feature-card:nth-child(3) { animation: fadeUp .5s .3s ease both; }
+</style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav>
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo">
+      <div class="nav-logo-icon">🎓</div>
+      <div>
+        <div class="nav-logo-text">StageFlow</div>
+        <span class="nav-logo-sub">DPGR · Gestion intelligente des stages</span>
+      </div>
+    </a>
+    <div class="nav-links">
+      <a href="#">Accueil</a>
+      <a href="#fonctionnalites">Fonctionnalités</a>
+      <a href="#acteurs">Acteurs</a>
+    </div>
+    <a href="connexion.html" class="btn-connect nav-links" style="display:inline-flex">Se connecter</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section>
+  <div class="hero">
+    <div class="hero-left">
+      <div class="hero-tag">Plateforme de gestion de stages</div>
+      <h1 class="hero-title">
+        Gérer vos stages avec <span class="accent-blue">fluidité</span><br>
+        et <span class="accent-green">précision</span>
+      </h1>
+      <p class="hero-desc">
+        StageFlow centralise toutes vos démarches de stage en un seul endroit.
+        Soumettez, suivez et validez vos conventions en quelques clics.
+      </p>
+      <a href="connexion.html" class="hero-cta">
+        Commencer maintenant →
+      </a>
+    </div>
+
+    <div class="steps-card">
+      <div class="steps-title">Processus simplifié en 3 étapes</div>
+      <div class="step-item">
+        <div class="step-num s1">01</div>
+        <div>
+          <div class="step-name">Soumettre votre dossier</div>
+          <div class="step-desc">Déposez votre convention et documents requis</div>
+        </div>
+      </div>
+      <div class="step-item">
+        <div class="step-num s2">02</div>
+        <div>
+          <div class="step-name">Validation enseignant</div>
+          <div class="step-desc">Votre responsable examine et valide la demande</div>
+        </div>
+      </div>
+      <div class="step-item">
+        <div class="step-num s3">03</div>
+        <div>
+          <div class="step-name">Approbation administrative</div>
+          <div class="step-desc">L'administration finalise et archive le dossier</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="section" id="fonctionnalites">
+  <div class="section-label">Pourquoi StageFlow ?</div>
+  <div class="section-title">Tout ce dont vous avez besoin</div>
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon fi-green">✅</div>
+      <div class="feature-title">Validation rapide</div>
+      <div class="feature-desc">Traitement des demandes sous 48h grâce à un workflow numérique optimisé et des notifications en temps réel.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon fi-blue">📊</div>
+      <div class="feature-title">Suivi en temps réel</div>
+      <div class="feature-desc">Consultez l'état de votre dossier à chaque étape, de la soumission jusqu'à la validation finale.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon fi-orange">🔒</div>
+      <div class="feature-title">Sécurité des données</div>
+      <div class="feature-desc">Vos documents sont stockés de manière sécurisée avec un accès restreint selon les droits de chaque acteur.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ACTORS -->
+<section class="actors-section" id="acteurs">
+  <div class="section">
+    <div class="section-label">Les acteurs</div>
+    <div class="section-title">Une plateforme pour tous les profils</div>
+    <div class="actors-grid">
+      <div class="actor-card" onclick="window.location='connexion.html'">
+        <div class="actor-avatar av-e">E</div>
+        <div class="actor-title">Espace Étudiant</div>
+        <div class="actor-desc">Déposez vos dossiers de stage, suivez l'avancement de vos demandes et recevez les notifications en temps réel.</div>
+      </div>
+      <div class="actor-card" onclick="window.location='connexion.html'">
+        <div class="actor-avatar av-p">P</div>
+        <div class="actor-title">Espace Enseignant</div>
+        <div class="actor-desc">Validez les conventions de stage, suivez le parcours de vos étudiants et communiquez vos décisions.</div>
+      </div>
+      <div class="actor-card" onclick="window.location='connexion.html'">
+        <div class="actor-avatar av-a">A</div>
+        <div class="actor-title">Espace Admin</div>
+        <div class="actor-desc">Supervisez l'ensemble des dossiers, gérez les utilisateurs et consultez les statistiques globales de la plateforme.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section">
+  <div class="cta-box">
+    <div class="cta-title">Prêt à commencer votre stage ?</div>
+    <p class="cta-desc">Rejoignez des centaines d'étudiants qui utilisent StageFlow pour simplifier leurs démarches.</p>
+    <a href="connexion.html" class="cta-btn">Se connecter →</a>
+  </div>
+</section>
+
+</body>
+</html>
+

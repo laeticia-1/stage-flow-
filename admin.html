@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StageFlow — Administration</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Lora:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --blue-dark:#1e3a6e; --blue-mid:#2d5aa0; --blue-light:#4a90d9; --blue-pale:#c8dff5;
+    --bg:#ddeeff; --bg2:#e8f2fc; --white:#ffffff;
+    --text:#1a2e4a; --text2:#4a6080; --text3:#7a95b0;
+    --green:#27ae6e; --green-bg:rgba(39,174,110,0.12);
+    --red:#e74c3c; --red-bg:rgba(231,76,60,0.10);
+    --orange:#e09040; --orange-bg:rgba(224,144,64,0.12);
+    --sidebar-w:190px;
+    --shadow:0 4px 20px rgba(30,58,110,0.10);
+    --shadow-lg:0 8px 32px rgba(30,58,110,0.14);
+    --radius:14px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(--text);display:flex;min-height:100vh;}
+  .sidebar{width:var(--sidebar-w);background:var(--blue-dark);display:flex;flex-direction:column;align-items:center;padding:24px 0 18px;position:fixed;height:100vh;z-index:100;}
+  .sb-avatar{width:68px;height:68px;border-radius:50%;background:rgba(255,255,255,0.15);border:2px solid rgba(255,255,255,0.25);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;color:#fff;margin-bottom:6px;}
+  .sb-role{font-size:11px;color:rgba(255,255,255,0.6);margin-bottom:22px;}
+  .sb-nav{width:100%;padding:0 10px;flex:1;display:flex;flex-direction:column;gap:2px;}
+  .sb-item{display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:9px;color:rgba(255,255,255,0.6);font-size:12.5px;font-weight:500;cursor:pointer;transition:all .15s;border:none;background:none;width:100%;font-family:inherit;text-align:left;}
+  .sb-item:hover{background:rgba(255,255,255,0.1);color:#fff;}
+  .sb-item.active{background:rgba(255,255,255,0.18);color:#fff;font-weight:600;}
+  .sb-icon{font-size:14px;width:16px;text-align:center;flex-shrink:0;}
+  .sb-footer{width:100%;padding:12px 10px 0;margin-top:auto;border-top:1px solid rgba(255,255,255,0.1);}
+  .sb-logout{width:100%;padding:9px 12px;border-radius:9px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:rgba(255,255,255,0.7);font-size:12.5px;font-weight:500;cursor:pointer;font-family:inherit;transition:all .15s;}
+  .sb-logout:hover{background:rgba(255,255,255,0.16);color:#fff;}
+  .main{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;min-height:100vh;}
+  .topbar{background:var(--white);border-bottom:1px solid rgba(30,58,110,0.08);padding:0 28px;height:60px;display:flex;align-items:center;gap:14px;box-shadow:0 2px 10px rgba(30,58,110,0.06);position:sticky;top:0;z-index:50;}
+  .tb-logo{margin-right:auto;display:flex;align-items:center;gap:8px;}
+  .tb-logo-icon{width:30px;height:30px;background:linear-gradient(135deg,var(--blue-mid),var(--blue-light));border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px;}
+  .tb-logo-text{font-weight:800;font-size:16px;color:var(--blue-dark);line-height:1;}
+  .tb-logo-sub{font-size:9px;color:var(--text3);font-weight:500;display:block;}
+  .tb-search{display:flex;align-items:center;gap:7px;background:var(--bg2);border:1px solid rgba(30,58,110,0.1);border-radius:8px;padding:6px 12px;width:200px;}
+  .tb-search input{background:none;border:none;outline:none;font-family:inherit;font-size:12px;color:var(--text);width:100%;}
+  .tb-bell{width:34px;height:34px;background:var(--bg2);border:1px solid rgba(30,58,110,0.1);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;font-size:16px;transition:all .15s;}
+  .tb-bell:hover{background:var(--blue-pale);}
+  .tb-dot{position:absolute;top:7px;right:7px;width:7px;height:7px;background:var(--orange);border-radius:50%;border:1.5px solid var(--white);}
+  .content{padding:28px;flex:1;}
+  .page{display:none;}
+  .page.active{display:block;}
+  .page-header{margin-bottom:22px;}
+  .page-title{font-family:'Lora',serif;font-size:clamp(20px,2.5vw,26px);font-weight:600;color:var(--text);margin-bottom:4px;}
+  .page-sub{font-size:13px;color:var(--text2);}
+  .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px;}
+  .stat-card{border-radius:var(--radius);padding:18px 20px;border:1px solid transparent;transition:transform .2s,box-shadow .2s;}
+  .stat-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg);}
+  .sc-val{font-family:'Lora',serif;font-size:36px;font-weight:700;line-height:1;}
+  .sc-lbl{font-size:12px;font-weight:600;margin-top:5px;}
+  .sc-sub{font-size:11px;margin-top:4px;}
+  .sc-blue{background:#dbeafe;border-color:#bfdbfe;} .sc-blue .sc-val{color:#1d4ed8;} .sc-blue .sc-lbl{color:#2563eb;} .sc-blue .sc-sub{color:#60a5fa;}
+  .sc-green{background:#d1fae5;border-color:#a7f3d0;} .sc-green .sc-val{color:#065f46;} .sc-green .sc-lbl{color:#047857;} .sc-green .sc-sub{color:#34d399;}
+  .sc-red{background:#fee2e2;border-color:#fecaca;} .sc-red .sc-val{color:#991b1b;} .sc-red .sc-lbl{color:#b91c1c;} .sc-red .sc-sub{color:#f87171;}
+  .sc-orange{background:#ffedd5;border-color:#fed7aa;} .sc-orange .sc-val{color:#92400e;} .sc-orange .sc-lbl{color:#b45309;} .sc-orange .sc-sub{color:#fb923c;}
+  .card{background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow);border:1px solid rgba(30,58,110,0.07);overflow:hidden;margin-bottom:18px;}
+  .card-head{padding:15px 20px;border-bottom:1px solid rgba(30,58,110,0.07);display:flex;align-items:center;gap:10px;}
+  .card-title{font-size:14px;font-weight:700;color:var(--text);flex:1;}
+  table{width:100%;border-collapse:collapse;}
+  thead tr{border-bottom:1px solid rgba(30,58,110,0.1);}
+  thead th{padding:10px 16px;text-align:left;font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;white-space:nowrap;}
+  tbody tr{border-bottom:1px solid rgba(30,58,110,0.06);transition:background .12s;cursor:pointer;}
+  tbody tr:last-child{border-bottom:none;}
+  tbody tr:hover{background:var(--bg2);}
+  tbody td{padding:12px 16px;font-size:12.5px;color:var(--text2);}
+  .td-main{color:var(--text);font-weight:600;font-size:13px;}
+  .td-sub{font-size:11px;color:var(--text3);margin-top:1px;}
+  .av{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--blue-dark);flex-shrink:0;}
+  .badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:99px;font-size:11px;font-weight:600;}
+  .b-green{background:var(--green-bg);color:#1a7a4a;}
+  .b-red{background:var(--red-bg);color:#b03020;}
+  .b-orange{background:var(--orange-bg);color:#a06010;}
+  .b-blue{background:rgba(74,144,217,0.12);color:var(--blue-mid);}
+  /* PASTEL avatars */
+  .av{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--blue-dark);flex-shrink:0;}
+  /* Pastel button colors */
+  .btn-primary{background:#dbeafe;color:#1d4ed8;border:1px solid #bfdbfe;} .btn-primary:hover{background:#bfdbfe;}
+  .btn-outline{background:var(--white);color:var(--text2);border:1px solid rgba(30,58,110,0.15);} .btn-outline:hover{background:var(--bg2);}
+  .btn-green{background:#d1fae5;color:#065f46;border:1px solid #a7f3d0;} .btn-green:hover{background:#a7f3d0;}
+  .btn-red{background:#fee2e2;color:#991b1b;border:1px solid #fecaca;} .btn-red:hover{background:#fecaca;}
+  .btn-sm{padding:5px 12px;font-size:11.5px;}
+  /* Pastel active states */
+  .pag-btn.active{background:#dbeafe;color:#1d4ed8;border-color:#bfdbfe;}
+  .year-tab.active{background:#dbeafe;color:#1d4ed8;border-color:#bfdbfe;}
+  .notif-tab.active{background:#dbeafe;color:#1d4ed8;border-color:#bfdbfe;}
+  /* Pastel modal header */
+  .modal-head{padding:20px 24px;border-bottom:1px solid rgba(30,58,110,0.08);display:flex;align-items:center;gap:10px;background:#f0f7ff;}
+  /* Pastel send button */
+  .send-btn{width:100%;padding:10px;border-radius:9px;background:#dbeafe;color:#1d4ed8;border:1px solid #bfdbfe;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s;}
+  .send-btn:hover{background:#bfdbfe;}
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px;}
+  .donut-wrap{padding:20px;display:flex;flex-direction:column;align-items:center;gap:14px;}
+  .donut{position:relative;width:140px;height:140px;}
+  .donut svg{transform:rotate(-90deg);}
+  .donut-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+  .donut-val{font-family:'Lora',serif;font-size:28px;font-weight:700;color:var(--text);}
+  .donut-lbl{font-size:10px;color:var(--text3);font-weight:500;}
+  .legend{display:flex;flex-direction:column;gap:8px;width:100%;}
+  .leg-row{display:flex;align-items:center;gap:8px;font-size:12px;}
+  .leg-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0;}
+  .leg-lbl{flex:1;color:var(--text2);}
+  .leg-val{font-weight:700;}
+  .act-item{display:flex;align-items:center;gap:12px;padding:13px 18px;border-bottom:1px solid rgba(30,58,110,0.06);transition:background .12s;cursor:pointer;}
+  .act-item:last-child{border-bottom:none;}
+  .act-item:hover{background:var(--bg2);}
+  .act-info{flex:1;}
+  .act-name{font-size:13px;font-weight:600;color:var(--text);}
+  .act-sub{font-size:11px;color:var(--text3);margin-top:2px;}
+  .dept-grid{display:grid;grid-template-columns:1fr 1fr;gap:0;}
+  .dept-item{padding:16px 20px;border-bottom:1px solid rgba(30,58,110,0.06);}
+  .dept-item:nth-child(odd){border-right:1px solid rgba(30,58,110,0.06);}
+  .dept-item:nth-last-child(-n+2){border-bottom:none;}
+  .dept-name{font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px;}
+  .dept-sub{font-size:11px;color:var(--text3);margin-bottom:8px;}
+  .dept-row{display:flex;align-items:center;gap:10px;}
+  .dept-bar-wrap{flex:1;height:5px;background:rgba(30,58,110,0.1);border-radius:99px;overflow:hidden;}
+  .dept-bar{height:100%;border-radius:99px;}
+  .dept-pct{font-size:13px;font-weight:700;min-width:34px;text-align:right;}
+  .filter-row{display:flex;gap:10px;margin-bottom:16px;align-items:center;flex-wrap:wrap;}
+  .filter-input{display:flex;align-items:center;gap:7px;background:var(--white);border:1px solid rgba(30,58,110,0.15);border-radius:8px;padding:7px 12px;font-size:12px;flex:1;max-width:300px;}
+  .filter-input input{background:none;border:none;outline:none;font-family:inherit;font-size:12px;color:var(--text);width:100%;}
+  .filter-select{background:var(--white);border:1px solid rgba(30,58,110,0.15);border-radius:8px;padding:7px 12px;font-size:12px;font-family:inherit;color:var(--text2);cursor:pointer;outline:none;}
+  .pagination{display:flex;align-items:center;gap:6px;justify-content:flex-end;padding:14px 18px;border-top:1px solid rgba(30,58,110,0.07);}
+  .pag-btn{width:32px;height:32px;border-radius:8px;border:1px solid rgba(30,58,110,0.15);background:var(--white);color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:inherit;transition:all .15s;}
+  .pag-btn:hover{background:var(--bg2);}
+  .pag-btn.active{background:var(--blue-mid);color:#fff;border-color:var(--blue-mid);}
+  .pag-info{font-size:12px;color:var(--text3);margin-right:auto;}
+  .year-tabs{display:flex;gap:8px;margin-bottom:20px;}
+  .year-tab{padding:7px 18px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;border:1px solid rgba(30,58,110,0.15);background:var(--white);color:var(--text2);transition:all .15s;}
+  .year-tab.active{background:var(--blue-dark);color:#fff;border-color:var(--blue-dark);}
+  .arch-top{display:grid;grid-template-columns:220px 1fr;gap:18px;margin-bottom:20px;}
+  .arch-count-card{background:var(--white);border-radius:var(--radius);padding:24px;box-shadow:var(--shadow);border:1px solid rgba(30,58,110,0.07);text-align:center;}
+  .arch-icon{font-size:36px;margin-bottom:10px;}
+  .arch-count-lbl{font-size:12px;color:var(--text3);margin-bottom:6px;}
+  .arch-count-val{font-family:'Lora',serif;font-size:32px;font-weight:700;color:var(--blue-dark);}
+  .arch-excel-card{background:var(--white);border-radius:var(--radius);padding:22px 24px;box-shadow:var(--shadow);border:1px solid rgba(30,58,110,0.07);}
+  .arch-excel-title{font-size:16px;font-weight:700;color:var(--text);margin-bottom:8px;}
+  .arch-excel-text{font-size:13px;color:var(--text2);line-height:1.6;}
+  .arch-row{background:var(--white);border-radius:var(--radius);padding:16px 20px;margin-bottom:10px;display:flex;align-items:center;gap:14px;box-shadow:0 2px 8px rgba(30,58,110,0.06);border:1px solid rgba(30,58,110,0.07);transition:all .15s;cursor:pointer;}
+  .arch-row:hover{box-shadow:var(--shadow);transform:translateX(3px);}
+  .arch-row-icon{font-size:22px;flex-shrink:0;}
+  .arch-row-info{flex:1;}
+  .arch-row-name{font-size:13px;font-weight:600;color:var(--blue-mid);}
+  .arch-row-meta{font-size:11px;color:var(--text3);margin-top:2px;}
+  .attest-preview{background:var(--white);border-radius:12px;border:1px solid rgba(30,58,110,0.15);padding:26px 30px;}
+  .attest-uni{text-align:center;font-size:14px;font-weight:600;color:var(--text);line-height:1.4;margin-bottom:4px;}
+  .attest-title{text-align:center;font-size:18px;font-weight:800;color:var(--blue-dark);letter-spacing:.5px;margin:12px 0;}
+  .attest-divider{height:2px;background:var(--blue-dark);margin:0 0 18px;}
+  .attest-body{font-size:13px;color:#2a3a50;line-height:1.8;}
+  .attest-body .hi{color:var(--blue-mid);font-weight:600;}
+  .attest-sigs{display:flex;justify-content:space-between;margin-top:28px;}
+  .attest-sig{text-align:center;}
+  .sig-label{font-size:12px;font-weight:600;color:var(--text);margin-bottom:20px;}
+  .sig-line{width:110px;height:1px;background:var(--text);margin:0 auto 6px;}
+  .sig-name{font-size:11px;color:var(--text2);}
+  .notif-layout{display:grid;grid-template-columns:1fr 300px;gap:20px;}
+  .notif-tab-row{display:flex;gap:8px;margin-bottom:14px;align-items:center;}
+  .notif-tab{padding:7px 18px;border-radius:99px;font-size:12.5px;font-weight:600;cursor:pointer;border:1px solid rgba(30,58,110,0.15);background:var(--white);color:var(--text2);transition:all .15s;}
+  .notif-tab.active{background:var(--blue-dark);color:#fff;border-color:var(--blue-dark);}
+  .notif-item{background:var(--white);border-radius:var(--radius);padding:14px 16px;margin-bottom:10px;display:flex;gap:12px;box-shadow:0 2px 8px rgba(30,58,110,0.06);border:1px solid rgba(30,58,110,0.07);transition:all .15s;cursor:pointer;}
+  .notif-item:hover{box-shadow:var(--shadow);transform:translateY(-1px);}
+  .ni-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;}
+  .ni-name{font-size:13px;font-weight:600;color:var(--green);}
+  .ni-text{font-size:12.5px;color:var(--text2);line-height:1.5;}
+  .ni-time{font-size:11px;color:var(--text3);margin-top:4px;}
+  .send-card{background:var(--white);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow);border:1px solid rgba(30,58,110,0.07);}
+  .send-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:16px;}
+  .form-label{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.7px;display:block;margin-bottom:6px;}
+  .form-input,.form-select,.form-textarea{width:100%;background:var(--bg2);border:1px solid rgba(30,58,110,0.12);border-radius:8px;padding:9px 12px;font-size:13px;font-family:inherit;color:var(--text);outline:none;margin-bottom:14px;}
+  .form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--blue-light);background:var(--white);}
+  .form-textarea{resize:vertical;min-height:90px;line-height:1.6;}
+  .modal-ov{position:fixed;inset:0;background:rgba(0,0,0,0.45);backdrop-filter:blur(4px);z-index:200;display:none;align-items:center;justify-content:center;}
+  .modal-ov.open{display:flex;}
+  .modal{background:var(--white);border-radius:18px;width:580px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.2);animation:popIn .22s ease;}
+  @keyframes popIn{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
+  .modal-head{padding:20px 24px;border-bottom:1px solid rgba(30,58,110,0.08);display:flex;align-items:center;gap:10px;}
+  .modal-title{font-size:16px;font-weight:700;color:var(--text);flex:1;}
+  .modal-close{width:28px;height:28px;border-radius:7px;background:var(--bg2);border:1px solid rgba(30,58,110,0.12);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;color:var(--text3);}
+  .modal-close:hover{color:var(--red);}
+  .modal-body{padding:22px 24px;}
+  .modal-foot{padding:14px 24px 20px;display:flex;gap:10px;justify-content:flex-end;border-top:1px solid rgba(30,58,110,0.07);}
+  .modal::-webkit-scrollbar{width:4px;} .modal::-webkit-scrollbar-thumb{background:var(--blue-pale);border-radius:4px;}
+  #toast{position:fixed;bottom:22px;right:22px;background:var(--blue-dark);color:#fff;border-radius:11px;padding:12px 18px;font-size:13px;font-weight:500;box-shadow:var(--shadow-lg);transform:translateY(80px);opacity:0;transition:all .3s;z-index:9999;max-width:300px;}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+  .page.active>*{animation:fadeUp .35s ease both;}
+  @media(max-width:900px){.sidebar{display:none;}.main{margin-left:0;}.stats-row,.two-col,.notif-layout,.arch-top{grid-template-columns:1fr 1fr;}.dept-grid{grid-template-columns:1fr;}}
+  @media(max-width:600px){.content{padding:14px;}.stats-row{grid-template-columns:1fr 1fr;}}
+</style>
+</head>
+<body>
+<aside class="sidebar">
+  <div class="sb-avatar">AD</div>
+  <div class="sb-role">Administration</div>
+  <nav class="sb-nav">
+    <button class="sb-item active" onclick="showPage('dashboard')"><span class="sb-icon">⬡</span> Tableau de bord</button>
+    <button class="sb-item" onclick="showPage('dossiers')"><span class="sb-icon">📁</span> Dossiers</button>
+    <button class="sb-item" onclick="showPage('archivage')"><span class="sb-icon">🗂</span> Archivage</button>
+    <button class="sb-item" onclick="showPage('attestations')"><span class="sb-icon">📄</span> Attestations</button>
+    <button class="sb-item" onclick="showPage('notifications')"><span class="sb-icon">🔔</span> Notifications</button>
+    <button class="sb-item" onclick="showPage('propositions')"><span class="sb-icon">📌</span> Propositions</button>
+    <button class="sb-item" onclick="showPage('enseignants')"><span class="sb-icon">👤</span> Enseignants</button>
+  </nav>
+  <div class="sb-footer">
+    <button class="sb-logout" onclick="window.location='index__6_.html'">Déconnexion</button>
+  </div>
+</aside>
+<div class="main">
+  <header class="topbar">
+    <div class="tb-logo">
+      <div class="tb-logo-icon">🎓</div>
+      <div><div class="tb-logo-text">StageFlow</div><span class="tb-logo-sub">DPGR · Gestion intelligente des stages</span></div>
+    </div>
+    <div class="tb-search"><span>🔍</span><input type="text" placeholder="Rechercher..."></div>
+    <div class="tb-bell" onclick="showPage('notifications')">🔔<span class="tb-dot"></span></div>
+  </header>
+  <div class="content">
+
+    <!-- DASHBOARD -->
+    <div class="page active" id="page-dashboard">
+      <div class="page-header"><div class="page-title">Bienvenue — Vue d'ensemble de la plateforme de gestion des stages</div></div>
+      <div class="stats-row">
+        <div class="stat-card sc-blue"><div class="sc-val">248</div><div class="sc-lbl">Total étudiants</div><div class="sc-sub">+12 ce mois</div></div>
+        <div class="stat-card sc-green"><div class="sc-val">36</div><div class="sc-lbl">Enseignants</div><div class="sc-sub">+2 ce mois</div></div>
+        <div class="stat-card sc-red"><div class="sc-val">183</div><div class="sc-lbl">Dossiers traités</div><div class="sc-sub">74% taux validation</div></div>
+        <div class="stat-card sc-orange"><div class="sc-val">47</div><div class="sc-lbl">Demandes en attente</div><div class="sc-sub">+8 depuis hier</div></div>
+      </div>
+      <div class="two-col">
+        <div class="card">
+          <div class="card-head"><div class="card-title">Activité récente</div><button class="btn btn-outline btn-sm" onclick="showPage('dossiers')">Voir tout →</button></div>
+          <div>
+            <div class="act-item" onclick="showPage('dossiers')"><div class="av" style="background:#fee2e2">KB</div><div class="act-info"><div class="act-name">Karima Benali <span style="font-size:11px;font-weight:400;color:var(--text3)">a soumis une nouvelle demande</span></div><div class="act-sub">Il y a 5 minutes</div></div></div>
+            <div class="act-item" onclick="showPage('dossiers')"><div class="av" style="background:#dbeafe">KO</div><div class="act-info"><div class="act-name">Prof.Karim Ouali <span style="font-size:11px;font-weight:400;color:var(--text3)">a validé un dossier</span></div><div class="act-sub">Il y a 22 minutes</div></div></div>
+            <div class="act-item" onclick="showPage('propositions')"><div class="av" style="background:#d1fae5">SM</div><div class="act-info"><div class="act-name">Prof.Sara Meziane <span style="font-size:11px;font-weight:400;color:var(--text3)">a proposé un stage</span></div><div class="act-sub">Il y a 1 heure</div></div></div>
+            <div class="act-item"><div class="av" style="background:#ffedd5">AH</div><div class="act-info"><div class="act-name">Prof.Aya Benali <span style="font-size:11px;font-weight:400;color:var(--text3)">a refusé un stage</span></div><div class="act-sub">Il y a 3 heures</div></div></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head"><div class="card-title">Statut des Demandes</div></div>
+          <div class="donut-wrap">
+            <div class="donut">
+              <svg width="140" height="140" viewBox="0 0 140 140">
+                <circle cx="70" cy="70" r="54" fill="none" stroke="#e8f2fc" stroke-width="22"/>
+                <circle cx="70" cy="70" r="54" fill="none" stroke="#27ae6e" stroke-width="22" stroke-dasharray="203.6 135.7" stroke-dashoffset="0"/>
+                <circle cx="70" cy="70" r="54" fill="none" stroke="#e09040" stroke-width="22" stroke-dasharray="69.2 270.1" stroke-dashoffset="-203.6"/>
+                <circle cx="70" cy="70" r="54" fill="none" stroke="#e74c3c" stroke-width="22" stroke-dasharray="66.5 272.8" stroke-dashoffset="-272.8"/>
+              </svg>
+              <div class="donut-center"><div class="donut-val">230</div><div class="donut-lbl">Total</div></div>
+            </div>
+            <div class="legend">
+              <div class="leg-row"><div class="leg-dot" style="background:#d1fae5"></div><div class="leg-lbl">Validées</div><div class="leg-val" style="color:#27ae6e">138</div></div>
+              <div class="leg-row"><div class="leg-dot" style="background:#ffedd5"></div><div class="leg-lbl">En attente</div><div class="leg-val" style="color:#e09040">47</div></div>
+              <div class="leg-row"><div class="leg-dot" style="background:#fee2e2"></div><div class="leg-lbl">Refusées</div><div class="leg-val" style="color:#e74c3c">45</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><div class="card-title">Demandes par département</div></div>
+        <div class="dept-grid">
+          <div class="dept-item"><div class="dept-name">IA</div><div class="dept-sub">78 demandes</div><div class="dept-row"><div class="dept-bar-wrap"><div class="dept-bar" style="width:34%;background:#27ae6e"></div></div><div class="dept-pct" style="color:#27ae6e">34%</div></div></div>
+          <div class="dept-item"><div class="dept-name">IOT</div><div class="dept-sub">42 demandes</div><div class="dept-row"><div class="dept-bar-wrap"><div class="dept-bar" style="width:18%;background:#e09040"></div></div><div class="dept-pct" style="color:#e09040">18%</div></div></div>
+          <div class="dept-item"><div class="dept-name">Réseaux/Sécurité</div><div class="dept-sub">54 demandes</div><div class="dept-row"><div class="dept-bar-wrap"><div class="dept-bar" style="width:23%;background:#8b5cf6"></div></div><div class="dept-pct" style="color:#8b5cf6">23%</div></div></div>
+          <div class="dept-item"><div class="dept-name">Dev web</div><div class="dept-sub">31 demandes</div><div class="dept-row"><div class="dept-bar-wrap"><div class="dept-bar" style="width:14%;background:#e74c3c"></div></div><div class="dept-pct" style="color:#e74c3c">14%</div></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DOSSIERS -->
+    <div class="page" id="page-dossiers">
+      <div class="page-header"><div class="page-title">Suivi et administration de tous les dossiers de stage</div></div>
+      <div class="stats-row">
+        <div class="stat-card sc-blue"><div class="sc-val">230</div><div class="sc-lbl">Total dossiers</div><div class="sc-sub">Année 2025-2026</div></div>
+        <div class="stat-card sc-orange"><div class="sc-val">47</div><div class="sc-lbl">En traitement</div><div class="sc-sub">+8 nouveaux</div></div>
+        <div class="stat-card sc-green"><div class="sc-val">138</div><div class="sc-lbl">Validées</div><div class="sc-sub">60% du total</div></div>
+        <div class="stat-card sc-red"><div class="sc-val">45</div><div class="sc-lbl">Refusées</div><div class="sc-sub">20% du total</div></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><div class="card-title">Tous les dossiers</div><div class="filter-input" style="max-width:220px;margin-left:auto"><span>🔍</span><input type="text" placeholder="Rechercher..."></div></div>
+        <table>
+          <thead><tr><th>Étudiant</th><th>Entreprise</th><th>Date dépôt</th><th>Statut</th><th>Enseignant tuteur</th><th>Action</th></tr></thead>
+          <tbody>
+            <tr onclick="openModal('modal-dossier')"><td><div style="display:flex;align-items:center;gap:8px"><div class="av" style="background:#d1fae5">YB</div><div class="td-main">Yassine Benkhalil</div></div></td><td>Sonatrach</td><td>10 Mars 2026</td><td><span class="badge b-orange">● En attente</span></td><td>B.Mansouri</td><td><div style="display:flex;gap:6px"><button class="btn btn-outline btn-sm" onclick="event.stopPropagation();openModal('modal-dossier')">Voir</button><button class="btn btn-primary btn-sm" onclick="event.stopPropagation();toast('✅ Dossier confirmé!')">Confirmer</button></div></td></tr>
+            <tr onclick="openModal('modal-dossier')"><td><div style="display:flex;align-items:center;gap:8px"><div class="av" style="background:#fee2e2">KB</div><div class="td-main">Karima Benali</div></div></td><td>Djezzy</td><td>8 Mars 2026</td><td><span class="badge b-green">✓ Validée</span></td><td>B.Mansouri</td><td><div style="display:flex;gap:6px"><button class="btn btn-outline btn-sm" onclick="event.stopPropagation();openModal('modal-dossier')">Voir</button><button class="btn btn-primary btn-sm" onclick="event.stopPropagation();toast('✅ Confirmé!')">Confirmer</button></div></td></tr>
+            <tr onclick="openModal('modal-dossier')"><td><div style="display:flex;align-items:center;gap:8px"><div class="av" style="background:#ffedd5">AH</div><div class="td-main">Ali Haddad</div></div></td><td>Condor</td><td>25 Mars 2026</td><td><span class="badge b-red">✗ Refusée</span></td><td>N.Khaled</td><td><div style="display:flex;gap:6px"><button class="btn btn-outline btn-sm" onclick="event.stopPropagation();openModal('modal-dossier')">Voir</button><button class="btn btn-primary btn-sm" onclick="event.stopPropagation();toast('✅ Confirmé!')">Confirmer</button></div></td></tr>
+            <tr onclick="openModal('modal-dossier')"><td><div style="display:flex;align-items:center;gap:8px"><div class="av" style="background:#d1fae5">YB</div><div class="td-main">Yamina Bir</div></div></td><td>BNA Banque</td><td>25 Mars 2026</td><td><span class="badge b-green">✓ Validée</span></td><td>F.Lounis</td><td><div style="display:flex;gap:6px"><button class="btn btn-outline btn-sm" onclick="event.stopPropagation();openModal('modal-dossier')">Voir</button><button class="btn btn-primary btn-sm" onclick="event.stopPropagation();toast('✅ Confirmé!')">Confirmer</button></div></td></tr>
+            <tr onclick="openModal('modal-dossier')"><td><div style="display:flex;align-items:center;gap:8px"><div class="av" style="background:#ede9fe">LB</div><div class="td-main">Lina Boukhari</div></div></td><td>Mobilis Telecom</td><td>25 Mars 2026</td><td><span class="badge b-green">✓ Validée</span></td><td>L.Bouri</td><td><div style="display:flex;gap:6px"><button class="btn btn-outline btn-sm" onclick="event.stopPropagation();openModal('modal-dossier')">Voir</button><button class="btn btn-primary btn-sm" onclick="event.stopPropagation();toast('✅ Confirmé!')">Confirmer</button></div></td></tr>
+            <tr onclick="openModal('modal-dossier')"><td><div style="display:flex;align-items:center;gap:8px"><div class="av" style="background:#fee2e2">RS</div><div class="td-main">Riad Salhi</div></div></td><td>Air Algérie</td><td>20 Mars 2026</td><td><span class="badge b-red">✗ Refusée</span></td><td>K.Amari</td><td><div style="display:flex;gap:6px"><button class="btn btn-outline btn-sm" onclick="event.stopPropagation();openModal('modal-dossier')">Voir</button><button class="btn btn-primary btn-sm" onclick="event.stopPropagation();toast('✅ Confirmé!')">Confirmer</button></div></td></tr>
+          </tbody>
+        </table>
+        <div class="pagination"><span class="pag-info">Affichage 1-6 sur 230 dossiers</span><button class="pag-btn">‹</button><button class="pag-btn active">01</button><button class="pag-btn">02</button><button class="pag-btn">03</button><button class="pag-btn">›</button></div>
+      </div>
+    </div>
+
+    <!-- ARCHIVAGE -->
+    <div class="page" id="page-archivage">
+      <div class="page-header"><div class="page-title">Archives des stages</div><div class="page-sub">Accédez aux dossiers de stage complétés des semestres précédents et gérez-les. Tous les dossiers sont signés et vérifiés.</div></div>
+      <div class="year-tabs">
+        <button class="year-tab" onclick="selYear(this)">2023-2024</button>
+        <button class="year-tab" onclick="selYear(this)">2024-2025</button>
+        <button class="year-tab active" onclick="selYear(this)">2025-2026</button>
+      </div>
+      <div class="arch-top">
+        <div class="arch-count-card"><div class="arch-icon">📥</div><div class="arch-count-lbl">Total archivé</div><div class="arch-count-val">347 Dossiers</div></div>
+        <div class="arch-excel-card"><div class="arch-excel-title">Promotions d'excellence</div><div class="arch-excel-text">La promotion 2023 a atteint un taux de signature de 100% pour tous les contrats de stage. Tous les dossiers ont été transférés dans un entrepôt frigorifique de haute sécurité.</div></div>
+      </div>
+      <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:14px">Dossiers archivés</div>
+      <div class="arch-row"><div class="arch-row-icon">📦</div><div class="arch-row-info"><div class="arch-row-name">Promo 2025–2026 — IOT</div><div class="arch-row-meta">47 dossiers · 3 attestations · Archivé le 30/06/2024</div></div><span class="badge b-green">Complet</span></div>
+      <div class="arch-row"><div class="arch-row-icon">📦</div><div class="arch-row-info"><div class="arch-row-name">Promo 2025–2026 — Réseau</div><div class="arch-row-meta">32 dossiers · 2 attestations · Archivé le 30/06/2024</div></div><span class="badge b-green">Complet</span></div>
+      <div class="arch-row"><div class="arch-row-icon">📦</div><div class="arch-row-info"><div class="arch-row-name">Promo 2025–2026 — IA</div><div class="arch-row-meta">28 dossiers · Archivé le 30/06/2023</div></div><span class="badge b-green">Complet</span></div>
+      <div class="arch-row" style="opacity:.7"><div class="arch-row-icon">📂</div><div class="arch-row-info"><div class="arch-row-name">Promo 2026–2027 — En cours</div><div class="arch-row-meta">89 dossiers validés à ce jour</div></div><span class="badge b-orange">En cours</span></div>
+      <div style="display:flex;justify-content:center;margin-top:20px"><button class="btn btn-outline" style="color:var(--blue-mid);border-color:var(--blue-mid)" onclick="toast('📦 Archivage lancé pour 2026-2027...')">Archiver dossiers 2026-2027</button></div>
+    </div>
+
+    <!-- ATTESTATIONS -->
+    <div class="page" id="page-attestations">
+      <div class="page-header"><div class="page-title">Liste des attestations</div></div>
+      <div class="filter-row"><div class="filter-input"><span>🔍</span><input type="text" placeholder="Rechercher..."></div></div>
+      <div class="card">
+        <table>
+          <thead><tr><th>Étudiant</th><th>Enseignant</th><th>Date</th><th>Action</th></tr></thead>
+          <tbody>
+            <tr><td><div style="display:flex;align-items:center;gap:8px"><div class="av" style="background:#fee2e2">KB</div><div class="td-main">Karima Benali</div></div></td><td>B.Mansouri</td><td>28 Janvier 2026</td><td><div style="display:flex;gap:6px"><button class="btn btn-outline btn-sm" onclick="openAttest(0)">Aperçu</button><button class="btn btn-primary btn-sm" onclick="toast('🗂 Archivé!')">Archiver</button></div></td></tr>
+            <tr><td><div style="display:flex;align-items:center;gap:8px"><div class="av" style="background:#dbeafe">MK</div><div class="td-main">Mohamed Khaldi</div></div></td><td>A.Benali</td><td>25 Mars 2026</td><td><div style="display:flex;gap:6px"><button class="btn btn-outline btn-sm" onclick="openAttest(1)">Aperçu</button><button class="btn btn-primary btn-sm" onclick="toast('🗂 Archivé!')">Archiver</button></div></td></tr>
+            <tr><td><div style="display:flex;align-items:center;gap:8px"><div class="av" style="background:#d1fae5">YB</div><div class="td-main">Yamina Bir</div></div></td><td>F.Lounis</td><td>25 Mars 2026</td><td><div style="display:flex;gap:6px"><button class="btn btn-outline btn-sm" onclick="openAttest(2)">Aperçu</button><button class="btn btn-primary btn-sm" onclick="toast('🗂 Archivé!')">Archiver</button></div></td></tr>
+            <tr><td><div style="display:flex;align-items:center;gap:8px"><div class="av" style="background:#ede9fe">LB</div><div class="td-main">Lina Boukhari</div></div></td><td>L.Bouri</td><td>25 Mars 2026</td><td><div style="display:flex;gap:6px"><button class="btn btn-outline btn-sm" onclick="openAttest(3)">Aperçu</button><button class="btn btn-primary btn-sm" onclick="toast('🗂 Archivé!')">Archiver</button></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- NOTIFICATIONS -->
+    <div class="page" id="page-notifications">
+      <div class="page-header"><div class="page-title">Mes Notifications :</div></div>
+      <div style="display:flex;gap:10px;margin-bottom:16px;align-items:center">
+        <div class="filter-input" style="max-width:260px"><span>🔍</span><input type="text" placeholder="Rechercher..."></div>
+        <div class="tb-bell" style="margin-left:4px">🔔<span class="tb-dot"></span></div>
+        <div id="notif-date-admin" style="margin-left:auto;background:#dbeafe;color:#1d4ed8;border:1px solid #bfdbfe;border-radius:99px;padding:6px 16px;font-size:12.5px;font-weight:600;"></div>
+      </div>
+      <div class="notif-layout">
+        <div>
+          <div class="notif-tab-row"><button class="notif-tab active" onclick="filtNotif(this,'all')">Toutes(06)</button><button class="notif-tab" onclick="filtNotif(this,'unread')">Non lues(0)</button></div>
+          <div style="font-size:12px;color:var(--text3);margin-bottom:12px">Toutes les notifications reçues</div>
+          <div id="notif-list-admin">
+            <div class="notif-item" data-read="true"><div class="ni-icon" style="background:var(--green-bg)">👤</div><div><div><span class="ni-name">KB Karima Benali</span> <span class="ni-text">a soumis une nouvelle demande</span></div><div class="ni-time">Il y a 5 minutes</div></div></div>
+            <div class="notif-item" data-read="true"><div class="ni-icon" style="background:rgba(74,144,217,0.12)">👤</div><div><div><span class="ni-name">KO Prof.Karim Ouali</span> <span class="ni-text">a validé un dossier</span></div><div class="ni-time">Il y a 22 minutes</div></div></div>
+            <div class="notif-item" data-read="true"><div class="ni-icon" style="background:var(--orange-bg)">👤</div><div><div><span class="ni-name">SM Prof.Sara Meziane</span> <span class="ni-text">a refusé un dossier</span></div><div class="ni-time">Il y a 1 heure</div></div></div>
+            <div class="notif-item" data-read="true"><div class="ni-icon" style="background:var(--red-bg)">👤</div><div><div><span class="ni-name">AB Prof.Aya Benali</span> <span class="ni-text">a refusé un stage</span></div><div class="ni-time">Il y a 3 heures</div></div></div>
+            <div class="notif-item" data-read="true"><div class="ni-icon" style="background:var(--green-bg)">👤</div><div><div><span class="ni-name">AH Prof.Ali Hassani</span> <span class="ni-text">a proposé un stage</span></div><div class="ni-time">Il y a un jour</div></div></div>
+            <div class="notif-item" data-read="true"><div class="ni-icon" style="background:var(--blue-pale)">📄</div><div><div><span class="ni-name">AB Prof.Ahmed Benali</span> <span class="ni-text">a envoyé une attestation</span></div><div class="ni-time">Il y a 3 jours</div></div></div>
+          </div>
+        </div>
+        <div class="send-card">
+          <div class="send-title">Envoyer une notification</div>
+          <label class="form-label">Destinataire</label>
+          <select class="form-select"><option value="">Sélectionner...</option><option>Tous les étudiants</option><option>Tous les enseignants</option><option>Karima Benali</option><option>Prof. Karim Ouali</option></select>
+          <label class="form-label">Message</label>
+          <textarea class="form-textarea" placeholder="Rédigez votre message ..."></textarea>
+          <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="toast('🔔 Notification envoyée!')">Envoyer la notification</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROPOSITIONS -->
+    <div class="page" id="page-propositions">
+      <div class="page-header"><div class="page-title">Propositions</div><div class="page-sub">Offres de stages — Voici un aperçu de toutes les propositions</div></div>
+      <div class="filter-row"><div class="filter-input" style="max-width:260px"><span>🔍</span><input type="text" placeholder="Rechercher..."></div></div>
+      <div class="card">
+        <table>
+          <thead><tr><th>Stage</th><th>Candidatures</th><th>Niveau requis</th><th>Place</th><th>Statut</th><th>Enseignant tuteur</th><th>Action</th></tr></thead>
+          <tbody>
+            <tr><td><div class="td-main">Systèmes embarqués</div><div class="td-sub">3 mois</div></td><td>6</td><td>L3</td><td>2</td><td><span class="badge b-orange">● Fermée</span></td><td>B.Mansouri</td><td><button class="btn btn-outline btn-sm" onclick="openVoir('prop')">Voir</button></td></tr>
+            <tr><td><div class="td-main">Cybersécurité</div><div class="td-sub">4 mois</div></td><td>7</td><td>M2</td><td>6</td><td><span class="badge b-green">✓ Validée</span></td><td>B.Mansouri</td><td><button class="btn btn-outline btn-sm" onclick="openVoir('prop')">Voir</button></td></tr>
+            <tr><td><div class="td-main">IA</div><div class="td-sub">6 mois</div></td><td>4</td><td>M2</td><td>4</td><td><span class="badge b-orange">● Fermée</span></td><td>N.Khaled</td><td><button class="btn btn-outline btn-sm" onclick="openVoir('prop')">Voir</button></td></tr>
+            <tr><td><div class="td-main">UI/UX Design</div><div class="td-sub">2 mois</div></td><td>6</td><td>L3</td><td>5</td><td><span class="badge b-green">✓ Validée</span></td><td>F.Lounis</td><td><button class="btn btn-outline btn-sm" onclick="openVoir('prop')">Voir</button></td></tr>
+            <tr><td><div class="td-main">Data/Analyse</div><div class="td-sub">3 mois</div></td><td>3</td><td>M2</td><td>2</td><td><span class="badge b-green">✓ Validée</span></td><td>L.Bouri</td><td><button class="btn btn-outline btn-sm" onclick="openVoir('prop')">Voir</button></td></tr>
+            <tr><td><div class="td-main">Développement web</div><div class="td-sub">2 mois</div></td><td>6</td><td>L3</td><td>1</td><td><span class="badge b-orange">● Fermée</span></td><td>K.Amari</td><td><button class="btn btn-outline btn-sm" onclick="openVoir('prop')">Voir</button></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ENSEIGNANTS -->
+    <div class="page" id="page-enseignants">
+      <div class="page-header"><div class="page-title">Corps enseignants</div></div>
+      <div class="filter-row"><div class="filter-input" style="max-width:260px"><span>🔍</span><input type="text" placeholder="Rechercher..."></div><div class="tb-bell" style="margin-left:auto">🔔<span class="tb-dot"></span></div></div>
+      <div class="card">
+        <table>
+          <thead><tr><th>Enseignant</th><th>Grade</th><th>Spécialité</th><th>Propositions</th><th>Encadrements</th><th>Statut</th><th>Action</th></tr></thead>
+          <tbody>
+            <tr><td><div style="display:flex;align-items:center;gap:8px"><div class="av" style="background:#dbeafe">KM</div><div class="td-main">Dr.Kaddour mehdi</div></div></td><td>Maitre de conf</td><td>IOT</td><td>4 actives</td><td>4 étudiants</td><td><span style="color:#27ae6e;font-weight:700;font-size:13px">Actif</span></td><td><button class="btn btn-outline btn-sm" onclick="openVoir('ens')">Voir</button></td></tr>
+            <tr><td><div style="display:flex;align-items:center;gap:8px"><div class="av" style="background:#d1fae5">ZL</div><div class="td-main">Prof Zerrouk Leila</div></div></td><td>Professeur</td><td>Reseaux/sécurité</td><td>5 actives</td><td>5 étudiants</td><td><span style="color:#27ae6e;font-weight:700;font-size:13px">Actif</span></td><td><button class="btn btn-outline btn-sm" onclick="openVoir('ens')">Voir</button></td></tr>
+            <tr><td><div style="display:flex;align-items:center;gap:8px"><div class="av" style="background:#fee2e2">BA</div><div class="td-main">Dr.Bouziane Amina</div></div></td><td>Maitre de conf</td><td>Dev web</td><td>2 actives</td><td>3 étudiants</td><td><span style="color:#27ae6e;font-weight:700;font-size:13px">Actif</span></td><td><button class="btn btn-outline btn-sm" onclick="openVoir('ens')">Voir</button></td></tr>
+            <tr><td><div style="display:flex;align-items:center;gap:8px"><div class="av" style="background:#ede9fe">HN</div><div class="td-main">Prof Hamidi Nabil</div></div></td><td>Professeur</td><td>IA</td><td>2 actives</td><td>4 étudiants</td><td><span style="color:#27ae6e;font-weight:700;font-size:13px">Actif</span></td><td><button class="btn btn-outline btn-sm" onclick="openVoir('ens')">Voir</button></td></tr>
+            <tr><td><div style="display:flex;align-items:center;gap:8px"><div class="av" style="background:#ffedd5">BA</div><div class="td-main">Dr.Ahmed Benali</div></div></td><td>Maitre de conf</td><td>Réseaux</td><td>3 actives</td><td>2 étudiants</td><td><span style="color:#27ae6e;font-weight:700;font-size:13px">Actif</span></td><td><button class="btn btn-outline btn-sm" onclick="openVoir('ens')">Voir</button></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- MODAL DOSSIER -->
+<div class="modal-ov" id="modal-dossier" onclick="closeModal('modal-dossier')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-head"><div class="modal-title">📁 Détail dossier — Yassine Benkhalil</div><div class="modal-close" onclick="closeModal('modal-dossier')">✕</div></div>
+    <div class="modal-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px">
+        <div><div class="form-label">Étudiant</div><div style="font-weight:600;font-size:13px">Yassine Benkhalil</div></div>
+        <div><div class="form-label">Entreprise</div><div style="font-weight:600;font-size:13px">Sonatrach</div></div>
+        <div><div class="form-label">Enseignant tuteur</div><div style="font-weight:600;font-size:13px">B.Mansouri</div></div>
+        <div><div class="form-label">Date dépôt</div><div style="font-weight:600;font-size:13px">10 Mars 2026</div></div>
+        <div><div class="form-label">Période</div><div style="font-weight:600;font-size:13px">Jun — Aoû 2026</div></div>
+        <div><div class="form-label">Statut</div><span class="badge b-orange">● En attente</span></div>
+      </div>
+      <div style="background:var(--bg2);border-radius:9px;padding:12px 14px;font-size:13px;color:var(--text2)"><strong style="color:var(--text)">Décision de l'enseignant :</strong> En attente de validation.</div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" onclick="closeModal('modal-dossier')">Fermer</button>
+      <button class="btn btn-green" onclick="closeModal('modal-dossier');toast('✅ Dossier validé!')">Valider</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL ATTESTATION (dynamic) -->
+<div class="modal-ov" id="modal-attest" onclick="closeModal('modal-attest')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-head">
+      <div class="modal-title" id="attest-modal-title">📄 Attestation</div>
+      <div class="modal-close" onclick="closeModal('modal-attest')">✕</div>
+    </div>
+    <div class="modal-body">
+      <div class="attest-preview">
+        <div class="attest-uni">Ecole supérieure en sciences et technologies de<br>l'informatique et du numérique</div>
+        <div class="attest-title">ATTESTATION DE STAGES</div>
+        <div class="attest-divider"></div>
+        <div class="attest-body">
+          Je soussigne, <span class="hi" id="a-enseignant"></span>, Maitre de Conférences, Département d'Informatique, atteste par la présente que l'étudiant(e) <span class="hi" id="a-etudiant"></span>, inscrit(e) en <span class="hi" id="a-niveau"></span>, a effectué un stage sous ma supervision au sein du laboratoire de recherche du département, portant sur le sujet :<br><br>
+          <span class="hi">« <span id="a-sujet"></span> »</span><br><br>
+          Ce stage s'est déroulé du <span class="hi" id="a-debut"></span> au <span class="hi" id="a-fin"></span>, soit une période de <span class="hi" id="a-duree"></span>.<br><br>
+          Durant cette période, l'étudiant(e) a fait preuve de sérieux, d'initiative et de compétences techniques remarquables. Son travail a été jugé de manière <span class="hi" id="a-mention"></span>.<br><br>
+          Cette attestation est délivrée en vue de l'obtention du crédit de stage académique et pour servir et valoir ce que de droit.
+        </div>
+        <div class="attest-sigs">
+          <div class="attest-sig"><div class="sig-label">Fait le :</div><div class="sig-line"></div><div class="sig-name" style="color:var(--blue-mid);font-weight:600" id="a-date"></div></div>
+          <div class="attest-sig"><div class="sig-label">Enseignant Encadreur</div><div class="sig-line"></div><div class="sig-name" style="color:var(--blue-mid);font-weight:600" id="a-ens-sig"></div></div>
+          <div class="attest-sig"><div class="sig-label">Administration</div><div class="sig-line"></div><div class="sig-name">Signature</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" onclick="closeModal('modal-attest')">Fermer</button>
+      <button class="btn btn-primary" onclick="toast('🖨️ Impression lancée...')">🖨️ Imprimer</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PROPOSITION -->
+<div class="modal-ov" id="modal-prop" onclick="closeModal('modal-prop')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-head"><div class="modal-title">📌 Détail proposition — Cybersécurité</div><div class="modal-close" onclick="closeModal('modal-prop')">✕</div></div>
+    <div class="modal-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+        <div><div class="form-label">Enseignant</div><div style="font-weight:600;font-size:13px">B.Mansouri</div></div>
+        <div><div class="form-label">Niveau requis</div><div style="font-weight:600;font-size:13px">M2</div></div>
+        <div><div class="form-label">Durée</div><div style="font-weight:600;font-size:13px">4 mois</div></div>
+        <div><div class="form-label">Places</div><div style="font-weight:600;font-size:13px">6 places</div></div>
+        <div><div class="form-label">Candidatures</div><div style="font-weight:600;font-size:13px">7 candidatures</div></div>
+        <div><div class="form-label">Statut</div><span class="badge b-green">✓ Validée</span></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" onclick="closeModal('modal-prop')">Fermer</button>
+      <button class="btn btn-red" onclick="closeModal('modal-prop');toast('🔒 Proposition fermée')">Fermer proposition</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL ENSEIGNANT -->
+<div class="modal-ov" id="modal-ens" onclick="closeModal('modal-ens')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-head"><div class="modal-title">👤 Profil — Dr.Kaddour Mehdi</div><div class="modal-close" onclick="closeModal('modal-ens')">✕</div></div>
+    <div class="modal-body">
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px;padding:16px;background:#dbeafe;border-radius:12px;border:1px solid #bfdbfe">
+        <div class="av" style="background:#bfdbfe;width:48px;height:48px;font-size:16px;border-radius:12px;color:#1d4ed8">KM</div>
+        <div><div style="color:#1d4ed8;font-weight:700;font-size:15px">Dr.Kaddour Mehdi</div><div style="color:#60a5fa;font-size:12px">Maitre de conférence · IOT</div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+        <div><div class="form-label">Propositions actives</div><div style="font-weight:700;font-size:18px;color:var(--blue-mid)">4</div></div>
+        <div><div class="form-label">Étudiants encadrés</div><div style="font-weight:700;font-size:18px;color:var(--green)">4</div></div>
+        <div><div class="form-label">Statut</div><span style="color:#27ae6e;font-weight:700">● Actif</span></div>
+        <div><div class="form-label">Spécialité</div><div style="font-weight:600;font-size:13px">IOT</div></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" onclick="closeModal('modal-ens')">Fermer</button>
+      <button class="btn btn-primary" onclick="closeModal('modal-ens');toast('🔔 Message envoyé!')">Contacter</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<script>
+  function showPage(id) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.sb-item').forEach(i => i.classList.remove('active'));
+    const page = document.getElementById('page-' + id);
+    if (page) page.classList.add('active');
+    document.querySelectorAll('.sb-item').forEach(item => {
+      if ((item.getAttribute('onclick')||'').includes("'"+id+"'")) item.classList.add('active');
+    });
+    window.scrollTo(0,0);
+  }
+  function openModal(id) { document.getElementById(id).classList.add('open'); }
+  function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+  function selYear(btn) { document.querySelectorAll('.year-tab').forEach(t => t.classList.remove('active')); btn.classList.add('active'); toast('📂 Promotion ' + btn.textContent + ' chargée'); }
+  function filtNotif(btn, type) {
+    document.querySelectorAll('.notif-tab').forEach(t => t.classList.remove('active')); btn.classList.add('active');
+    document.querySelectorAll('#notif-list-admin .notif-item').forEach(item => { item.style.display = (type === 'unread' && item.dataset.read === 'true') ? 'none' : 'flex'; });
+  }
+  document.querySelectorAll('.pag-btn').forEach(btn => { btn.addEventListener('click', function() { const p = this.closest('.pagination'); p.querySelectorAll('.pag-btn').forEach(b => b.classList.remove('active')); if (!['‹','›'].includes(this.textContent)) this.classList.add('active'); }); });
+
+  // ── ATTESTATION DATA ──
+  const attestData = [
+    { nom:'Karima Benali',  enseignant:'Dr. B. Mansouri',  niveau:'Licence 3 — Informatique',    sujet:'Développement web full-stack avec React et Node.js', debut:'15 Janvier 2026', fin:'15 Mars 2026',   duree:'2 mois',  mention:'Bien',      date:'28 Janvier 2026'  },
+    { nom:'Mohamed Khaldi', enseignant:'Dr. Ahmed Benali',  niveau:'3ème année en Cycle supérieur', sujet:'Analyse de Données et Machine Learning',             debut:'01 Février 2026', fin:'31 Mai 2026',    duree:'4 mois',  mention:'Très Bien', date:'25 Mars 2026'     },
+    { nom:'Yamina Bir',     enseignant:'Dr. F. Lounis',     niveau:'Master 1 — Réseaux',           sujet:'Optimisation des réseaux télécoms BNA',              debut:'01 Mars 2026',    fin:'01 Juin 2026',   duree:'3 mois',  mention:'Assez Bien',date:'25 Mars 2026'     },
+    { nom:'Lina Boukhari',  enseignant:'Dr. L. Bouri',      niveau:'Master 2 — Génie Logiciel',    sujet:'Développement d\'une application mobile e-commerce', debut:'10 Février 2026', fin:'10 Avril 2026',  duree:'2 mois',  mention:'Très Bien', date:'25 Mars 2026'     },
+  ];
+
+  function openAttest(idx) {
+    const a = attestData[idx];
+    document.getElementById('attest-modal-title').textContent = '📄 Attestation — ' + a.nom;
+    document.getElementById('a-enseignant').textContent = a.enseignant;
+    document.getElementById('a-etudiant').textContent   = a.nom;
+    document.getElementById('a-niveau').textContent     = a.niveau;
+    document.getElementById('a-sujet').textContent      = a.sujet;
+    document.getElementById('a-debut').textContent      = a.debut;
+    document.getElementById('a-fin').textContent        = a.fin;
+    document.getElementById('a-duree').textContent      = a.duree;
+    document.getElementById('a-mention').textContent    = a.mention;
+    document.getElementById('a-date').textContent       = a.date;
+    document.getElementById('a-ens-sig').textContent    = a.enseignant;
+    openModal('modal-attest');
+  }
+
+  // Live date in notifications
+  function setLiveDate() {
+    const el = document.getElementById('notif-date-admin');
+    if (!el) return;
+    const now = new Date();
+    const days = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+    const months = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+    el.textContent = days[now.getDay()] + ', ' + now.getDate() + ' ' + months[now.getMonth()] + ' ' + now.getFullYear();
+  }
+
+  // Voir modals per page context
+  function openVoir(type) {
+    const map = { dossier:'modal-dossier', attest:'modal-attest', prop:'modal-prop', ens:'modal-ens' };
+    if (map[type]) openModal(map[type]);
+  }
+
+  let tt;
+  function toast(msg) {
+    const el = document.getElementById('toast'); el.textContent = msg; el.style.transform = 'translateY(0)'; el.style.opacity = '1';
+    clearTimeout(tt); tt = setTimeout(() => { el.style.transform = 'translateY(80px)'; el.style.opacity = '0'; }, 3000);
+  }
+
+  document.addEventListener('DOMContentLoaded', setLiveDate);
+</script>
+</body>
+</html>
+
