@@ -1,0 +1,1806 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StageFlow - Conception de la Base de Données</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0b0f19;
+            --bg-secondary: #111827;
+            --bg-tertiary: #1f2937;
+            --accent-blue: #3b82f6;
+            --accent-purple: #8b5cf6;
+            --accent-emerald: #10b981;
+            --accent-rose: #f43f5e;
+            --text-primary: #f3f4f6;
+            --text-secondary: #9ca3af;
+            --text-muted: #6b7280;
+            --border-color: rgba(255, 255, 255, 0.08);
+            --border-hover: rgba(255, 255, 255, 0.2);
+            --glow-color: rgba(59, 130, 246, 0.15);
+            --font-sans: 'Outfit', 'Plus Jakarta Sans', sans-serif;
+            --font-mono: 'Fira Code', monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            transition: background-color 0.2s, border-color 0.2s, box-shadow 0.2s;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: var(--font-sans);
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--bg-primary);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--bg-tertiary);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
+        }
+
+        /* Header */
+        header {
+            background: rgba(17, 24, 39, 0.7);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .logo-icon {
+            width: 2.5rem;
+            height: 2.5rem;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            border-radius: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 1.25rem;
+            color: white;
+            box-shadow: 0 0 20px rgba(139, 92, 246, 0.4);
+        }
+
+        .logo-text {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(to right, #ffffff, #a5b4fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.025em;
+        }
+
+        .logo-tag {
+            font-size: 0.75rem;
+            background: rgba(59, 130, 246, 0.15);
+            color: #60a5fa;
+            padding: 0.2rem 0.6rem;
+            border-radius: 9999px;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            font-weight: 600;
+        }
+
+        nav {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: 1px solid transparent;
+            color: var(--text-secondary);
+            padding: 0.6rem 1.2rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .tab-btn.active {
+            color: white;
+            background: rgba(59, 130, 246, 0.15);
+            border-color: rgba(59, 130, 246, 0.3);
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.1);
+        }
+
+        /* Layout Container */
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Tab Content */
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Split Screen (for relational & SQL view) */
+        .split-layout {
+            display: grid;
+            grid-template-columns: 1fr 450px;
+            gap: 2rem;
+            align-items: start;
+        }
+
+        @media (max-width: 1200px) {
+            .split-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Interactive Schema Styling */
+        .schema-container {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 1rem;
+            padding: 2rem;
+            position: relative;
+            min-height: 750px;
+            overflow: hidden;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .db-table {
+            background: rgba(17, 24, 39, 0.95);
+            border: 1px solid var(--border-color);
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            display: flex;
+            flex-direction: column;
+            cursor: pointer;
+            position: relative;
+            z-index: 10;
+        }
+
+        .db-table:hover {
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 20px var(--glow-color);
+            transform: translateY(-2px);
+        }
+
+        .db-table.active {
+            border-color: var(--accent-purple);
+            box-shadow: 0 0 25px rgba(139, 92, 246, 0.2);
+            z-index: 20;
+        }
+
+        .db-table.highlighted {
+            border-color: var(--accent-emerald);
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.15);
+        }
+
+        .db-table.dimmed {
+            opacity: 0.4;
+        }
+
+        .table-header {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--border-color);
+            font-weight: 700;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-radius: 0.75rem 0.75rem 0 0;
+            font-size: 0.95rem;
+            letter-spacing: 0.025em;
+        }
+
+        .table-header.utilisateurs { background: linear-gradient(90deg, rgba(59, 130, 246, 0.1) 0%, transparent 100%); color: #60a5fa; }
+        .table-header.etudiants { background: linear-gradient(90deg, rgba(139, 92, 246, 0.1) 0%, transparent 100%); color: #c084fc; }
+        .table-header.enseignants { background: linear-gradient(90deg, rgba(16, 185, 129, 0.1) 0%, transparent 100%); color: #34d399; }
+        .table-header.stages { background: linear-gradient(90deg, rgba(245, 158, 11, 0.1) 0%, transparent 100%); color: #fbbf24; }
+        .table-header.demandes { background: linear-gradient(90deg, rgba(244, 63, 94, 0.1) 0%, transparent 100%); color: #fb7185; }
+        .table-header.system { background: linear-gradient(90deg, rgba(107, 114, 128, 0.1) 0%, transparent 100%); color: #9ca3af; }
+
+        .table-tag {
+            font-size: 0.65rem;
+            padding: 0.1rem 0.4rem;
+            border-radius: 0.25rem;
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .table-fields {
+            padding: 0.5rem 0;
+            flex-grow: 1;
+        }
+
+        .table-field {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.4rem 1rem;
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+        }
+
+        .table-field:hover {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .field-name {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .field-name.pk::before {
+            content: "🔑";
+            font-size: 0.7rem;
+        }
+
+        .field-name.fk::before {
+            content: "🔗";
+            font-size: 0.7rem;
+        }
+
+        .field-name.pk-fk::before {
+            content: "🔑🔗";
+            font-size: 0.7rem;
+        }
+
+        .field-type {
+            color: var(--text-muted);
+        }
+
+        .table-field.pk-row {
+            color: #fbbf24;
+        }
+
+        .table-field.fk-row {
+            color: #60a5fa;
+        }
+
+        /* Sidebar details */
+        .details-panel {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            position: sticky;
+            top: 5rem;
+        }
+
+        .panel-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .panel-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .panel-section h4 {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+        }
+
+        .panel-section p {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        /* Code Block */
+        .code-container {
+            position: relative;
+            background: #090d16;
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            overflow: hidden;
+            margin-top: 0.5rem;
+        }
+
+        .code-header {
+            background: rgba(255, 255, 255, 0.02);
+            padding: 0.5rem 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .code-lang {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-family: var(--font-mono);
+        }
+
+        .copy-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 0.25rem;
+        }
+
+        .copy-btn:hover {
+            color: white;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        pre {
+            padding: 1rem;
+            overflow-x: auto;
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: #e2e8f0;
+            line-height: 1.5;
+        }
+
+        /* Toast */
+        #toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: var(--accent-emerald);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 500;
+            z-index: 1000;
+            transform: translateY(150%);
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        #toast.show {
+            transform: translateY(0);
+        }
+
+        /* Merise MCD View & UML */
+        .mcd-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 2rem;
+        }
+
+        @media (max-width: 1000px) {
+            .mcd-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .info-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 1rem;
+            padding: 1.75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .info-card h3 {
+            font-size: 1.25rem;
+            margin-bottom: 1rem;
+            color: white;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.5rem;
+        }
+
+        .association-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .association-item {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            padding: 1rem;
+        }
+
+        .association-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .association-name {
+            font-weight: 700;
+            color: var(--accent-purple);
+            font-size: 0.95rem;
+        }
+
+        .association-cardinalities {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            background: rgba(139, 92, 246, 0.1);
+            color: #c084fc;
+            padding: 0.1rem 0.5rem;
+            border-radius: 0.25rem;
+        }
+
+        .rule-badge {
+            display: inline-block;
+            font-size: 0.7rem;
+            background: rgba(244, 63, 94, 0.1);
+            color: #fb7185;
+            padding: 0.1rem 0.4rem;
+            border-radius: 0.25rem;
+            margin-top: 0.5rem;
+            font-weight: 600;
+        }
+
+        .nav-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            color: white;
+            border: none;
+            padding: 0.6rem 1.2rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            box-shadow: 0 4px 10px rgba(139, 92, 246, 0.2);
+        }
+
+        .btn-primary:hover {
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);
+            transform: translateY(-1px);
+        }
+
+        /* SQL View styling */
+        .sql-view-container {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 2rem;
+        }
+
+        @media (max-width: 900px) {
+            .sql-view-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .sql-nav-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .sql-nav-item {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-color);
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .sql-nav-item:hover, .sql-nav-item.active {
+            background: rgba(59, 130, 246, 0.08);
+            border-color: var(--accent-blue);
+            color: white;
+        }
+
+        /* MCD diagram visualization */
+        .visual-mcd {
+            width: 100%;
+            height: 600px;
+            background: #090d16;
+            border: 1px solid var(--border-color);
+            border-radius: 1rem;
+            position: relative;
+            overflow: auto;
+        }
+
+        .mcd-canvas {
+            width: 1400px;
+            height: 900px;
+            position: relative;
+            background-image: 
+                radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 0),
+                radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 0);
+            background-size: 24px 24px;
+            background-position: 0 0, 12px 12px;
+        }
+
+        .mcd-entity {
+            position: absolute;
+            background: var(--bg-secondary);
+            border: 2px solid var(--accent-blue);
+            border-radius: 0.5rem;
+            width: 200px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            font-size: 0.8rem;
+        }
+
+        .mcd-entity.subclass {
+            border-color: var(--accent-emerald);
+        }
+
+        .mcd-entity-header {
+            background: rgba(59, 130, 246, 0.15);
+            padding: 0.4rem 0.75rem;
+            font-weight: 700;
+            text-align: center;
+            border-bottom: 2px solid var(--accent-blue);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .mcd-entity.subclass .mcd-entity-header {
+            background: rgba(16, 185, 129, 0.15);
+            border-bottom-color: var(--accent-emerald);
+        }
+
+        .mcd-entity-attrs {
+            padding: 0.5rem 0.75rem;
+            font-family: var(--font-sans);
+        }
+
+        .mcd-attr {
+            padding: 0.15rem 0;
+        }
+
+        .mcd-attr.identifier {
+            text-decoration: underline;
+            font-weight: 600;
+        }
+
+        .mcd-relation {
+            position: absolute;
+            background: var(--bg-primary);
+            border: 2px solid var(--accent-purple);
+            border-radius: 50% / 50%;
+            width: 100px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.75rem;
+            color: #d8b4fe;
+            text-transform: uppercase;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.4);
+            z-index: 5;
+        }
+
+        .svg-connections {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header>
+        <div class="logo-container">
+            <div class="logo-icon">SF</div>
+            <span class="logo-text">StageFlow DB</span>
+            <span class="logo-tag">V1.0 - Conception</span>
+        </div>
+        <nav>
+            <button class="tab-btn active" onclick="switchTab('interactive')">🔌 Schéma Relationnel</button>
+            <button class="tab-btn" onclick="switchTab('mcd')">📊 Merise MCD</button>
+            <button class="tab-btn" onclick="switchTab('sql')">🗄️ DDL MySQL</button>
+            <button class="tab-btn" onclick="switchTab('django')">🐍 Modèles Django</button>
+        </nav>
+        <div class="nav-actions">
+            <button class="btn-primary" onclick="exportFullSQL()">⚡ Tout exporter (SQL)</button>
+        </div>
+    </header>
+
+    <div class="container">
+        
+        <!-- Tab: Interactive Schema -->
+        <div id="tab-interactive" class="tab-content active">
+            <div class="info-card" style="margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                    <h2 style="font-size: 1.5rem; margin-bottom: 0.25rem;">Schéma Relationnel Interactif (MLD)</h2>
+                    <p style="color: var(--text-secondary); font-size: 0.95rem;">
+                        Cliquez sur une table pour analyser ses dépendances, clés étrangères (🔗) et générer son code DDL / Django associé.
+                    </p>
+                </div>
+                <div style="font-size: 0.8rem; color: var(--text-muted); display: flex; gap: 1rem;">
+                    <span>🔑 Clé Primaire</span>
+                    <span>🔗 Clé Étrangère</span>
+                </div>
+            </div>
+
+            <div class="split-layout">
+                <!-- Visual Table Grid -->
+                <div class="schema-container" id="schema-grid">
+                    
+                    <!-- Table: Utilisateur -->
+                    <div class="db-table" data-table="utilisateur" onclick="selectTable('utilisateur')">
+                        <div class="table-header utilisateurs">
+                            <span>Utilisateur</span>
+                            <span class="table-tag">Base</span>
+                        </div>
+                        <div class="table-fields">
+                            <div class="table-field pk-row"><span class="field-name pk">id_user</span><span class="field-type">INT AI</span></div>
+                            <div class="table-field"><span class="field-name">nom</span><span class="field-type">VARCHAR(100)</span></div>
+                            <div class="table-field"><span class="field-name">prenom</span><span class="field-type">VARCHAR(100)</span></div>
+                            <div class="table-field"><span class="field-name">email</span><span class="field-type">VARCHAR(150) UQ</span></div>
+                            <div class="table-field"><span class="field-name">role</span><span class="field-type">ENUM</span></div>
+                            <div class="table-field"><span class="field-name">date_creation</span><span class="field-type">DATETIME</span></div>
+                        </div>
+                    </div>
+
+                    <!-- Table: Etudiant -->
+                    <div class="db-table" data-table="etudiant" onclick="selectTable('etudiant')">
+                        <div class="table-header etudiants">
+                            <span>Etudiant</span>
+                            <span class="table-tag">Héritage (1:1)</span>
+                        </div>
+                        <div class="table-fields">
+                            <div class="table-field pk-row fk-row"><span class="field-name pk-fk">id_user</span><span class="field-type">INT</span></div>
+                            <div class="table-field"><span class="field-name">matricule</span><span class="field-type">VARCHAR(50) UQ</span></div>
+                            <div class="table-field"><span class="field-name">specialite</span><span class="field-type">VARCHAR(100)</span></div>
+                            <div class="table-field"><span class="field-name">niveau</span><span class="field-type">VARCHAR(50)</span></div>
+                            <div class="table-field"><span class="field-name">departement</span><span class="field-type">VARCHAR(100)</span></div>
+                        </div>
+                    </div>
+
+                    <!-- Table: Enseignant -->
+                    <div class="db-table" data-table="enseignant" onclick="selectTable('enseignant')">
+                        <div class="table-header enseignants">
+                            <span>Enseignant</span>
+                            <span class="table-tag">Héritage (1:1)</span>
+                        </div>
+                        <div class="table-fields">
+                            <div class="table-field pk-row fk-row"><span class="field-name pk-fk">id_user</span><span class="field-type">INT</span></div>
+                            <div class="table-field"><span class="field-name">grade</span><span class="field-type">VARCHAR(100)</span></div>
+                            <div class="table-field"><span class="field-name">departement</span><span class="field-type">VARCHAR(100)</span></div>
+                        </div>
+                    </div>
+
+                    <!-- Table: PropositionStage -->
+                    <div class="db-table" data-table="proposition" onclick="selectTable('proposition')">
+                        <div class="table-header stages">
+                            <span>PropositionStage</span>
+                            <span class="table-tag">Offres</span>
+                        </div>
+                        <div class="table-fields">
+                            <div class="table-field pk-row"><span class="field-name pk">id_proposition</span><span class="field-type">INT AI</span></div>
+                            <div class="table-field"><span class="field-name">titre</span><span class="field-type">VARCHAR(200)</span></div>
+                            <div class="table-field"><span class="field-name">description</span><span class="field-type">TEXT</span></div>
+                            <div class="table-field"><span class="field-name">technologies</span><span class="field-type">VARCHAR(255)</span></div>
+                            <div class="table-field"><span class="field-name">entreprise</span><span class="field-type">VARCHAR(150)</span></div>
+                            <div class="table-field"><span class="field-name">date_publication</span><span class="field-type">DATETIME</span></div>
+                            <div class="table-field"><span class="field-name">statut</span><span class="field-type">VARCHAR(50)</span></div>
+                            <div class="table-field fk-row"><span class="field-name fk">id_enseignant</span><span class="field-type">INT</span></div>
+                        </div>
+                    </div>
+
+                    <!-- Table: DemandeStage -->
+                    <div class="db-table" data-table="demande" onclick="selectTable('demande')">
+                        <div class="table-header demandes">
+                            <span>DemandeStage</span>
+                            <span class="table-tag">Postulation</span>
+                        </div>
+                        <div class="table-fields">
+                            <div class="table-field pk-row"><span class="field-name pk">id_demande</span><span class="field-type">INT AI</span></div>
+                            <div class="table-field"><span class="field-name">date_demande</span><span class="field-type">DATETIME</span></div>
+                            <div class="table-field"><span class="field-name">statut</span><span class="field-type">ENUM</span></div>
+                            <div class="table-field"><span class="field-name">cv</span><span class="field-type">VARCHAR(255)</span></div>
+                            <div class="table-field"><span class="field-name">lettre_motivation</span><span class="field-type">TEXT</span></div>
+                            <div class="table-field fk-row"><span class="field-name fk">id_etudiant</span><span class="field-type">INT</span></div>
+                            <div class="table-field fk-row"><span class="field-name fk">id_proposition</span><span class="field-type">INT</span></div>
+                        </div>
+                    </div>
+
+                    <!-- Table: Refus -->
+                    <div class="db-table" data-table="refus" onclick="selectTable('refus')">
+                        <div class="table-header system">
+                            <span>Refus</span>
+                            <span class="table-tag">Extension</span>
+                        </div>
+                        <div class="table-fields">
+                            <div class="table-field pk-row"><span class="field-name pk">id_refus</span><span class="field-type">INT AI</span></div>
+                            <div class="table-field"><span class="field-name">motif</span><span class="field-type">TEXT</span></div>
+                            <div class="table-field"><span class="field-name">date_refus</span><span class="field-type">DATETIME</span></div>
+                            <div class="table-field fk-row"><span class="field-name fk">id_demande</span><span class="field-type">INT UQ</span></div>
+                        </div>
+                    </div>
+
+                    <!-- Table: Attestation -->
+                    <div class="db-table" data-table="attestation" onclick="selectTable('attestation')">
+                        <div class="table-header system">
+                            <span>Attestation</span>
+                            <span class="table-tag">Documents</span>
+                        </div>
+                        <div class="table-fields">
+                            <div class="table-field pk-row"><span class="field-name pk">id_attestation</span><span class="field-type">INT AI</span></div>
+                            <div class="table-field"><span class="field-name">numero</span><span class="field-type">VARCHAR(100) UQ</span></div>
+                            <div class="table-field"><span class="field-name">date_generation</span><span class="field-type">DATETIME</span></div>
+                            <div class="table-field"><span class="field-name">fichier_pdf</span><span class="field-type">VARCHAR(255)</span></div>
+                            <div class="table-field"><span class="field-name">appreciation</span><span class="field-type">TEXT</span></div>
+                            <div class="table-field"><span class="field-name">mention</span><span class="field-type">VARCHAR(50)</span></div>
+                            <div class="table-field fk-row"><span class="field-name fk">id_demande</span><span class="field-type">INT UQ</span></div>
+                        </div>
+                    </div>
+
+                    <!-- Table: Notification -->
+                    <div class="db-table" data-table="notification" onclick="selectTable('notification')">
+                        <div class="table-header system">
+                            <span>Notification</span>
+                            <span class="table-tag">Communication</span>
+                        </div>
+                        <div class="table-fields">
+                            <div class="table-field pk-row"><span class="field-name pk">id_notification</span><span class="field-type">INT AI</span></div>
+                            <div class="table-field"><span class="field-name">message</span><span class="field-type">TEXT</span></div>
+                            <div class="table-field"><span class="field-name">date_envoi</span><span class="field-type">DATETIME</span></div>
+                            <div class="table-field"><span class="field-name">lu</span><span class="field-type">BOOLEAN</span></div>
+                            <div class="table-field fk-row"><span class="field-name fk">id_user</span><span class="field-type">INT</span></div>
+                        </div>
+                    </div>
+
+                    <!-- Table: Archive -->
+                    <div class="db-table" data-table="archive" onclick="selectTable('archive')">
+                        <div class="table-header system">
+                            <span>Archive</span>
+                            <span class="table-tag">Stockage</span>
+                        </div>
+                        <div class="table-fields">
+                            <div class="table-field pk-row"><span class="field-name pk">id_archive</span><span class="field-type">INT AI</span></div>
+                            <div class="table-field"><span class="field-name">date_archivage</span><span class="field-type">DATETIME</span></div>
+                            <div class="table-field fk-row"><span class="field-name fk">id_demande</span><span class="field-type">INT UQ</span></div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Sidebar Info Panel -->
+                <div class="details-panel" id="table-details">
+                    <div class="panel-title" id="panel-title-text">
+                        <span>Sélectionnez une table</span>
+                    </div>
+                    <div class="panel-section">
+                        <h4>Description de la table</h4>
+                        <p id="panel-desc">Cliquez sur une table dans le schéma pour afficher sa description logique, ses relations et son script SQL.</p>
+                    </div>
+                    <div class="panel-section">
+                        <h4>Relations &amp; Intégrité</h4>
+                        <p id="panel-relations">Aucune table sélectionnée.</p>
+                    </div>
+                    <div class="panel-section">
+                        <h4>DDL SQL (MySQL)</h4>
+                        <div class="code-container">
+                            <div class="code-header">
+                                <span class="code-lang">mysql</span>
+                                <button class="copy-btn" onclick="copyCode('details-sql')">📋 Copier</button>
+                            </div>
+                            <pre><code id="details-sql">-- Sélectionnez une table pour voir le SQL</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab: MCD (Merise) -->
+        <div id="tab-mcd" class="tab-content">
+            <div class="mcd-grid">
+                <div>
+                    <div class="info-card">
+                        <h3>Visualisation du Modèle Conceptuel de Données (MCD)</h3>
+                        <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">
+                            Représentation Merise montrant les entités de StageFlow, leurs attributs et les associations sémantiques avec cardinalités.
+                        </p>
+                        
+                        <div class="visual-mcd">
+                            <div class="mcd-canvas">
+                                <svg class="svg-connections" id="mcd-connections">
+                                    <!-- We will draw lines between entities and associations -->
+                                </svg>
+                                
+                                <!-- Entity: Utilisateur -->
+                                <div class="mcd-entity" style="left: 100px; top: 120px;" id="ent-utilisateur">
+                                    <div class="mcd-entity-header">Utilisateur</div>
+                                    <div class="mcd-entity-attrs">
+                                        <div class="mcd-attr identifier">id_user</div>
+                                        <div class="mcd-attr">nom</div>
+                                        <div class="mcd-attr">prenom</div>
+                                        <div class="mcd-attr">email</div>
+                                        <div class="mcd-attr">role</div>
+                                        <div class="mcd-attr">date_creation</div>
+                                    </div>
+                                </div>
+
+                                <!-- Association Heritage (XT) -->
+                                <div class="mcd-relation" style="left: 380px; top: 145px; background-color: #1e1b4b; border-color: #8b5cf6;" id="assoc-xt">
+                                    <span>Héritage (XT)</span>
+                                </div>
+
+                                <!-- Entity: Etudiant -->
+                                <div class="mcd-entity subclass" style="left: 560px; top: 40px;" id="ent-etudiant">
+                                    <div class="mcd-entity-header">Etudiant</div>
+                                    <div class="mcd-entity-attrs">
+                                        <div class="mcd-attr identifier">id_user (FK)</div>
+                                        <div class="mcd-attr">matricule</div>
+                                        <div class="mcd-attr">specialite</div>
+                                        <div class="mcd-attr">niveau</div>
+                                        <div class="mcd-attr">departement</div>
+                                    </div>
+                                </div>
+
+                                <!-- Entity: Enseignant -->
+                                <div class="mcd-entity subclass" style="left: 560px; top: 220px;" id="ent-enseignant">
+                                    <div class="mcd-entity-header">Enseignant</div>
+                                    <div class="mcd-entity-attrs">
+                                        <div class="mcd-attr identifier">id_user (FK)</div>
+                                        <div class="mcd-attr">grade</div>
+                                        <div class="mcd-attr">departement</div>
+                                    </div>
+                                </div>
+
+                                <!-- Association Proposer -->
+                                <div class="mcd-relation" style="left: 880px; top: 245px;" id="assoc-proposer">
+                                    <span>Proposer</span>
+                                </div>
+
+                                <!-- Entity: PropositionStage -->
+                                <div class="mcd-entity" style="left: 1080px; top: 220px;" id="ent-proposition">
+                                    <div class="mcd-entity-header">PropositionStage</div>
+                                    <div class="mcd-entity-attrs">
+                                        <div class="mcd-attr identifier">id_proposition</div>
+                                        <div class="mcd-attr">titre</div>
+                                        <div class="mcd-attr">description</div>
+                                        <div class="mcd-attr">technologies</div>
+                                        <div class="mcd-attr">entreprise</div>
+                                        <div class="mcd-attr">date_publication</div>
+                                        <div class="mcd-attr">statut</div>
+                                    </div>
+                                </div>
+
+                                <!-- Association Concerner -->
+                                <div class="mcd-relation" style="left: 1130px; top: 450px;" id="assoc-concerner">
+                                    <span>Concerner</span>
+                                </div>
+
+                                <!-- Entity: DemandeStage -->
+                                <div class="mcd-entity" style="left: 1080px; top: 600px;" id="ent-demande">
+                                    <div class="mcd-entity-header">DemandeStage</div>
+                                    <div class="mcd-entity-attrs">
+                                        <div class="mcd-attr identifier">id_demande</div>
+                                        <div class="mcd-attr">date_demande</div>
+                                        <div class="mcd-attr">statut</div>
+                                        <div class="mcd-attr">cv</div>
+                                        <div class="mcd-attr">lettre_motivation</div>
+                                    </div>
+                                </div>
+
+                                <!-- Association Postuler -->
+                                <div class="mcd-relation" style="left: 820px; top: 625px;" id="assoc-postuler">
+                                    <span>Postuler</span>
+                                </div>
+
+                                <!-- Association Recevoir -->
+                                <div class="mcd-relation" style="left: 150px; top: 380px;" id="assoc-recevoir">
+                                    <span>Recevoir</span>
+                                </div>
+
+                                <!-- Entity: Notification -->
+                                <div class="mcd-entity" style="left: 100px; top: 520px;" id="ent-notification">
+                                    <div class="mcd-entity-header">Notification</div>
+                                    <div class="mcd-entity-attrs">
+                                        <div class="mcd-attr identifier">id_notification</div>
+                                        <div class="mcd-attr">message</div>
+                                        <div class="mcd-attr">date_envoi</div>
+                                        <div class="mcd-attr">lu</div>
+                                    </div>
+                                </div>
+
+                                <!-- Association Rejeter -->
+                                <div class="mcd-relation" style="left: 1130px; top: 800px;" id="assoc-rejeter">
+                                    <span>Rejeter</span>
+                                </div>
+
+                                <!-- Entity: Refus -->
+                                <div class="mcd-entity" style="left: 1080px; top: 880px;" id="ent-refus">
+                                    <div class="mcd-entity-header">Refus</div>
+                                    <div class="mcd-entity-attrs">
+                                        <div class="mcd-attr identifier">id_refus</div>
+                                        <div class="mcd-attr">motif</div>
+                                        <div class="mcd-attr">date_refus</div>
+                                    </div>
+                                </div>
+
+                                <!-- Association Generer -->
+                                <div class="mcd-relation" style="left: 1350px; top: 625px;" id="assoc-generer">
+                                    <span>Générer</span>
+                                </div>
+
+                                <!-- Entity: Attestation -->
+                                <div class="mcd-entity" style="left: 1500px; top: 600px;" id="ent-attestation">
+                                    <div class="mcd-entity-header">Attestation</div>
+                                    <div class="mcd-entity-attrs">
+                                        <div class="mcd-attr identifier">id_attestation</div>
+                                        <div class="mcd-attr">numero</div>
+                                        <div class="mcd-attr">date_generation</div>
+                                        <div class="mcd-attr">fichier_pdf</div>
+                                        <div class="mcd-attr">appreciation</div>
+                                        <div class="mcd-attr">mention</div>
+                                    </div>
+                                </div>
+
+                                <!-- Association Archiver -->
+                                <div class="mcd-relation" style="left: 1350px; top: 480px;" id="assoc-archiver">
+                                    <span>Archiver</span>
+                                </div>
+
+                                <!-- Entity: Archive -->
+                                <div class="mcd-entity" style="left: 1500px; top: 440px;" id="ent-archive">
+                                    <div class="mcd-entity-header">Archive</div>
+                                    <div class="mcd-entity-attrs">
+                                        <div class="mcd-attr identifier">id_archive</div>
+                                        <div class="mcd-attr">date_archivage</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Associations details -->
+                <div>
+                    <div class="info-card">
+                        <h3>Dictionnaire des Associations</h3>
+                        <div class="association-list">
+                            <div class="association-item">
+                                <div class="association-title">
+                                    <span class="association-name">Héritage (Utilisateur)</span>
+                                    <span class="association-cardinalities">XT (eXclusive &amp; Total)</span>
+                                </div>
+                                <p style="font-size: 0.85rem; color: var(--text-secondary);">
+                                    Un utilisateur est obligatoirement soit un étudiant, soit un enseignant, soit un administrateur. Le rôle définit le type d'héritage.
+                                </p>
+                            </div>
+                            <div class="association-item">
+                                <div class="association-title">
+                                    <span class="association-name">Proposer</span>
+                                    <span class="association-cardinalities">Enseignant (0,N) ↔ (1,1) Proposition</span>
+                                </div>
+                                <p style="font-size: 0.85rem; color: var(--text-secondary);">
+                                    Un enseignant peut proposer plusieurs sujets de stage. Chaque offre est proposée par un et un seul enseignant.
+                                </p>
+                            </div>
+                            <div class="association-item">
+                                <div class="association-title">
+                                    <span class="association-name">Postuler</span>
+                                    <span class="association-cardinalities">Etudiant (0,N) ↔ (1,1) Demande</span>
+                                </div>
+                                <p style="font-size: 0.85rem; color: var(--text-secondary);">
+                                    Un étudiant peut déposer plusieurs candidatures de stage. Chaque demande appartient à un unique étudiant.
+                                </p>
+                            </div>
+                            <div class="association-item">
+                                <div class="association-title">
+                                    <span class="association-name">Concerner</span>
+                                    <span class="association-cardinalities">Proposition (0,N) ↔ (1,1) Demande</span>
+                                </div>
+                                <p style="font-size: 0.85rem; color: var(--text-secondary);">
+                                    Un stage proposé peut recevoir plusieurs demandes d'étudiants différents. Une demande s'applique à un seul stage.
+                                </p>
+                            </div>
+                            <div class="association-item">
+                                <div class="association-title">
+                                    <span class="association-name">Rejeter</span>
+                                    <span class="association-cardinalities">Demande (0,1) ↔ (1,1) Refus</span>
+                                </div>
+                                <p style="font-size: 0.85rem; color: var(--text-secondary);">
+                                    Une demande de stage peut faire l'objet d'un refus (contenant un motif). Un refus est lié à une seule demande.
+                                </p>
+                            </div>
+                            <div class="association-item">
+                                <div class="association-title">
+                                    <span class="association-name">Générer</span>
+                                    <span class="association-cardinalities">Demande (0,1) ↔ (1,1) Attestation</span>
+                                </div>
+                                <p style="font-size: 0.85rem; color: var(--text-secondary);">
+                                    Une demande validée peut générer au plus une attestation de stage. Une attestation correspond à une unique demande.
+                                </p>
+                            </div>
+                            <div class="association-item">
+                                <div class="association-title">
+                                    <span class="association-name">Recevoir</span>
+                                    <span class="association-cardinalities">Utilisateur (0,N) ↔ (1,1) Notification</span>
+                                </div>
+                                <p style="font-size: 0.85rem; color: var(--text-secondary);">
+                                    Un utilisateur (étudiant, enseignant ou admin) reçoit 0 à N notifications dans son espace personnel.
+                                </p>
+                            </div>
+                            <div class="association-item">
+                                <div class="association-title">
+                                    <span class="association-name">Archiver</span>
+                                    <span class="association-cardinalities">Demande (0,1) ↔ (1,1) Archive</span>
+                                </div>
+                                <p style="font-size: 0.85rem; color: var(--text-secondary);">
+                                    Une demande de stage validée ou refusée est archivée pour historisation. Une archive est liée à une seule demande.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab: SQL (DDL MySQL) -->
+        <div id="tab-sql" class="tab-content">
+            <div class="sql-view-container">
+                <div class="sql-nav-list">
+                    <div class="sql-nav-item active" onclick="showSQLGroup('full')">Script Complet ⚡</div>
+                    <div class="sql-nav-item" onclick="showSQLGroup('users')">Utilisateurs &amp; Rôles</div>
+                    <div class="sql-nav-item" onclick="showSQLGroup('stages')">Propositions de Stages</div>
+                    <div class="sql-nav-item" onclick="showSQLGroup('demandes')">Demandes &amp; Traitements</div>
+                    <div class="sql-nav-item" onclick="showSQLGroup('documents')">Attestations &amp; Archives</div>
+                    <div class="sql-nav-item" onclick="showSQLGroup('notifs')">Notifications</div>
+                </div>
+
+                <div>
+                    <div class="info-card" style="padding: 1.5rem; margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <h3 style="margin-bottom: 0;">Script DDL MySQL</h3>
+                            <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 0.25rem;">
+                                Ce script SQL crée les tables, les clés primaires et les contraintes d'intégrité référentielle pour MySQL.
+                            </p>
+                        </div>
+                        <button class="btn-primary" onclick="copyCode('sql-pre-code')">📋 Copier le code</button>
+                    </div>
+
+                    <div class="code-container">
+                        <pre><code id="sql-pre-code">-- Script MySQL complet</code></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab: Django -->
+        <div id="tab-django" class="tab-content">
+            <div class="info-card" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <div>
+                    <h3>Modèles Django (models.py)</h3>
+                    <p style="color: var(--text-secondary); font-size: 0.9rem;">
+                        Implémentation Python Django avec Héritage de Table (Multi-table Inheritance) pour correspondre au MCD relationnel.
+                    </p>
+                </div>
+                <button class="btn-primary" onclick="copyCode('django-pre-code')">📋 Copier le code python</button>
+            </div>
+            
+            <div class="code-container">
+                <pre><code id="django-pre-code"># Django models.py</code></pre>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast">
+        <span>✔️ Code copié avec succès !</span>
+    </div>
+
+    <script>
+        // Database metadata
+        const dbSchema = {
+            utilisateur: {
+                title: "Table: Utilisateur",
+                desc: "Table parente contenant les attributs de base de tous les utilisateurs du système (Étudiants, Enseignants, Administrateurs). L'authentification SSO valide les adresses @estin.dz.",
+                relations: "• Parent de <strong>Etudiant</strong> (Héritage 1:1)<br>• Parent de <strong>Enseignant</strong> (Héritage 1:1)<br>• Cible des notifications dans la table <strong>Notification</strong> (Relation 1:N)",
+                sql: `CREATE TABLE Utilisateur (
+    id_user INT AUTO_INCREMENT PRIMARY KEY,
+    nom VARCHAR(100) NOT NULL,
+    prenom VARCHAR(100) NOT NULL,
+    email VARCHAR(150) UNIQUE NOT NULL,
+    role ENUM('etudiant', 'enseignant', 'admin') NOT NULL,
+    date_creation DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;`
+            },
+            etudiant: {
+                title: "Table: Etudiant",
+                desc: "Table spécialisée pour les étudiants. Hérite directement de la table Utilisateur via une clé étrangère qui sert également de clé primaire.",
+                relations: "• Clé étrangère <strong>id_user</strong> référence <strong>Utilisateur(id_user)</strong> ON DELETE CASCADE.<br>• Référencé par la table <strong>DemandeStage</strong> (candidatures d'un étudiant).",
+                sql: `CREATE TABLE Etudiant (
+    id_user INT PRIMARY KEY,
+    matricule VARCHAR(50) UNIQUE NOT NULL,
+    specialite VARCHAR(100) NOT NULL,
+    niveau VARCHAR(50) NOT NULL,
+    departement VARCHAR(100) NOT NULL,
+    CONSTRAINT fk_etudiant_user FOREIGN KEY (id_user) 
+        REFERENCES Utilisateur(id_user) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;`
+            },
+            enseignant: {
+                title: "Table: Enseignant",
+                desc: "Table spécialisée pour les enseignants. Hérite de la table Utilisateur. Elle est reliée aux propositions de stages créées par l'enseignant.",
+                relations: "• Clé étrangère <strong>id_user</strong> référence <strong>Utilisateur(id_user)</strong> ON DELETE CASCADE.<br>• Référencé par la table <strong>PropositionStage</strong> (offres publiées par un enseignant).",
+                sql: `CREATE TABLE Enseignant (
+    id_user INT PRIMARY KEY,
+    grade VARCHAR(100) NOT NULL,
+    departement VARCHAR(100) NOT NULL,
+    CONSTRAINT fk_enseignant_user FOREIGN KEY (id_user) 
+        REFERENCES Utilisateur(id_user) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;`
+            },
+            proposition: {
+                title: "Table: PropositionStage",
+                desc: "Représente les sujets et offres de stages créés et gérés par les enseignants.",
+                relations: "• Clé étrangère <strong>id_enseignant</strong> référence <strong>Enseignant(id_user)</strong> ON DELETE RESTRICT (empêche la suppression de l'enseignant s'il a des offres).<br>• Référencé par <strong>DemandeStage</strong>.",
+                sql: `CREATE TABLE PropositionStage (
+    id_proposition INT AUTO_INCREMENT PRIMARY KEY,
+    titre VARCHAR(200) NOT NULL,
+    description TEXT NOT NULL,
+    technologies VARCHAR(255),
+    entreprise VARCHAR(150) NOT NULL,
+    date_publication DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    statut VARCHAR(50) DEFAULT 'Ouvert' NOT NULL,
+    id_enseignant INT NOT NULL,
+    CONSTRAINT fk_proposition_enseignant FOREIGN KEY (id_enseignant) 
+        REFERENCES Enseignant(id_user) ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;`
+            },
+            demande: {
+                title: "Table: DemandeStage",
+                desc: "Représente les candidatures formulées par les étudiants pour des propositions spécifiques. C'est l'entité centrale des statuts de validation.",
+                relations: "• Clé étrangère <strong>id_etudiant</strong> référence <strong>Etudiant(id_user)</strong> ON DELETE CASCADE.<br>• Clé étrangère <strong>id_proposition</strong> référence <strong>PropositionStage(id_proposition)</strong> ON DELETE CASCADE.<br>• Liaison 1:1 vers <strong>Refus</strong>, <strong>Attestation</strong> et <strong>Archive</strong>.",
+                sql: `CREATE TABLE DemandeStage (
+    id_demande INT AUTO_INCREMENT PRIMARY KEY,
+    date_demande DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    statut ENUM('En attente', 'Acceptée', 'Refusée', 'Validée', 'Archivée') DEFAULT 'En attente' NOT NULL,
+    cv VARCHAR(255) NOT NULL,
+    lettre_motivation TEXT,
+    id_etudiant INT NOT NULL,
+    id_proposition INT NOT NULL,
+    CONSTRAINT fk_demande_etudiant FOREIGN KEY (id_etudiant) 
+        REFERENCES Etudiant(id_user) ON DELETE CASCADE,
+    CONSTRAINT fk_demande_proposition FOREIGN KEY (id_proposition) 
+        REFERENCES PropositionStage(id_proposition) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;`
+            },
+            refus: {
+                title: "Table: Refus",
+                desc: "Contient les motifs de refus des candidatures par les enseignants. Liaison 1:1 stricte avec la table DemandeStage.",
+                relations: "• Clé étrangère unique <strong>id_demande</strong> référence <strong>DemandeStage(id_demande)</strong> ON DELETE CASCADE.",
+                sql: `CREATE TABLE Refus (
+    id_refus INT AUTO_INCREMENT PRIMARY KEY,
+    motif TEXT NOT NULL,
+    date_refus DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    id_demande INT UNIQUE NOT NULL,
+    CONSTRAINT fk_refus_demande FOREIGN KEY (id_demande) 
+        REFERENCES DemandeStage(id_demande) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;`
+            },
+            attestation: {
+                title: "Table: Attestation",
+                desc: "Représente l'attestation officielle de fin de stage validée par l'administration et générée par le système.",
+                relations: "• Clé étrangère unique <strong>id_demande</strong> référence <strong>DemandeStage(id_demande)</strong> ON DELETE CASCADE.",
+                sql: `CREATE TABLE Attestation (
+    id_attestation INT AUTO_INCREMENT PRIMARY KEY,
+    numero VARCHAR(100) UNIQUE NOT NULL,
+    date_generation DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    fichier_pdf VARCHAR(255) NOT NULL,
+    appreciation TEXT,
+    mention VARCHAR(50),
+    id_demande INT UNIQUE NOT NULL,
+    CONSTRAINT fk_attestation_demande FOREIGN KEY (id_demande) 
+        REFERENCES DemandeStage(id_demande) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;`
+            },
+            notification: {
+                title: "Table: Notification",
+                desc: "Stocke les notifications envoyées aux utilisateurs pour les informer du changement de statut de leurs demandes ou offres.",
+                relations: "• Clé étrangère <strong>id_user</strong> référence <strong>Utilisateur(id_user)</strong> ON DELETE CASCADE.",
+                sql: `CREATE TABLE Notification (
+    id_notification INT AUTO_INCREMENT PRIMARY KEY,
+    message TEXT NOT NULL,
+    date_envoi DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    lu BOOLEAN DEFAULT FALSE NOT NULL,
+    id_user INT NOT NULL,
+    CONSTRAINT fk_notification_user FOREIGN KEY (id_user) 
+        REFERENCES Utilisateur(id_user) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;`
+            },
+            archive: {
+                title: "Table: Archive",
+                desc: "Table d'archivage des dossiers. Lorsqu'une demande est validée définitivement ou archivée par l'administration, une entrée est générée ici.",
+                relations: "• Clé étrangère unique <strong>id_demande</strong> référence <strong>DemandeStage(id_demande)</strong> ON DELETE CASCADE.",
+                sql: `CREATE TABLE Archive (
+    id_archive INT AUTO_INCREMENT PRIMARY KEY,
+    date_archivage DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    id_demande INT UNIQUE NOT NULL,
+    CONSTRAINT fk_archive_demande FOREIGN KEY (id_demande) 
+        REFERENCES DemandeStage(id_demande) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;`
+            }
+        };
+
+        const sqlGroups = {
+            full: `-- ============================================================
+-- SCRIPT DE CREATION DE LA BASE DE DONNEES STAGEFLOW (MySQL)
+-- ============================================================
+
+CREATE DATABASE IF NOT EXISTS stageflow_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE stageflow_db;
+
+-- 1. Table Utilisateur (Base)
+CREATE TABLE Utilisateur (
+    id_user INT AUTO_INCREMENT PRIMARY KEY,
+    nom VARCHAR(100) NOT NULL,
+    prenom VARCHAR(100) NOT NULL,
+    email VARCHAR(150) UNIQUE NOT NULL,
+    role ENUM('etudiant', 'enseignant', 'admin') NOT NULL,
+    date_creation DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 2. Table Etudiant (Héritage 1:1)
+CREATE TABLE Etudiant (
+    id_user INT PRIMARY KEY,
+    matricule VARCHAR(50) UNIQUE NOT NULL,
+    specialite VARCHAR(100) NOT NULL,
+    niveau VARCHAR(50) NOT NULL,
+    departement VARCHAR(100) NOT NULL,
+    CONSTRAINT fk_etudiant_user FOREIGN KEY (id_user) 
+        REFERENCES Utilisateur(id_user) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 3. Table Enseignant (Héritage 1:1)
+CREATE TABLE Enseignant (
+    id_user INT PRIMARY KEY,
+    grade VARCHAR(100) NOT NULL,
+    departement VARCHAR(100) NOT NULL,
+    CONSTRAINT fk_enseignant_user FOREIGN KEY (id_user) 
+        REFERENCES Utilisateur(id_user) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 4. Table PropositionStage
+CREATE TABLE PropositionStage (
+    id_proposition INT AUTO_INCREMENT PRIMARY KEY,
+    titre VARCHAR(200) NOT NULL,
+    description TEXT NOT NULL,
+    technologies VARCHAR(255),
+    entreprise VARCHAR(150) NOT NULL,
+    date_publication DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    statut VARCHAR(50) DEFAULT 'Ouvert' NOT NULL,
+    id_enseignant INT NOT NULL,
+    CONSTRAINT fk_proposition_enseignant FOREIGN KEY (id_enseignant) 
+        REFERENCES Enseignant(id_user) ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 5. Table DemandeStage
+CREATE TABLE DemandeStage (
+    id_demande INT AUTO_INCREMENT PRIMARY KEY,
+    date_demande DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    statut ENUM('En attente', 'Acceptée', 'Refusée', 'Validée', 'Archivée') DEFAULT 'En attente' NOT NULL,
+    cv VARCHAR(255) NOT NULL,
+    lettre_motivation TEXT,
+    id_etudiant INT NOT NULL,
+    id_proposition INT NOT NULL,
+    CONSTRAINT fk_demande_etudiant FOREIGN KEY (id_etudiant) 
+        REFERENCES Etudiant(id_user) ON DELETE CASCADE,
+    CONSTRAINT fk_demande_proposition FOREIGN KEY (id_proposition) 
+        REFERENCES PropositionStage(id_proposition) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 6. Table Refus (1:1)
+CREATE TABLE Refus (
+    id_refus INT AUTO_INCREMENT PRIMARY KEY,
+    motif TEXT NOT NULL,
+    date_refus DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    id_demande INT UNIQUE NOT NULL,
+    CONSTRAINT fk_refus_demande FOREIGN KEY (id_demande) 
+        REFERENCES DemandeStage(id_demande) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 7. Table Attestation (1:1)
+CREATE TABLE Attestation (
+    id_attestation INT AUTO_INCREMENT PRIMARY KEY,
+    numero VARCHAR(100) UNIQUE NOT NULL,
+    date_generation DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    fichier_pdf VARCHAR(255) NOT NULL,
+    appreciation TEXT,
+    mention VARCHAR(50),
+    id_demande INT UNIQUE NOT NULL,
+    CONSTRAINT fk_attestation_demande FOREIGN KEY (id_demande) 
+        REFERENCES DemandeStage(id_demande) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 8. Table Notification
+CREATE TABLE Notification (
+    id_notification INT AUTO_INCREMENT PRIMARY KEY,
+    message TEXT NOT NULL,
+    date_envoi DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    lu BOOLEAN DEFAULT FALSE NOT NULL,
+    id_user INT NOT NULL,
+    CONSTRAINT fk_notification_user FOREIGN KEY (id_user) 
+        REFERENCES Utilisateur(id_user) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 9. Table Archive (1:1)
+CREATE TABLE Archive (
+    id_archive INT AUTO_INCREMENT PRIMARY KEY,
+    date_archivage DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    id_demande INT UNIQUE NOT NULL,
+    CONSTRAINT fk_archive_demande FOREIGN KEY (id_demande) 
+        REFERENCES DemandeStage(id_demande) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;`,
+
+            users: `CREATE TABLE Utilisateur (
+    id_user INT AUTO_INCREMENT PRIMARY KEY,
+    nom VARCHAR(100) NOT NULL,
+    prenom VARCHAR(100) NOT NULL,
+    email VARCHAR(150) UNIQUE NOT NULL,
+    role ENUM('etudiant', 'enseignant', 'admin') NOT NULL,
+    date_creation DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE Etudiant (
+    id_user INT PRIMARY KEY,
+    matricule VARCHAR(50) UNIQUE NOT NULL,
+    specialite VARCHAR(100) NOT NULL,
+    niveau VARCHAR(50) NOT NULL,
+    departement VARCHAR(100) NOT NULL,
+    CONSTRAINT fk_etudiant_user FOREIGN KEY (id_user) 
+        REFERENCES Utilisateur(id_user) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE Enseignant (
+    id_user INT PRIMARY KEY,
+    grade VARCHAR(100) NOT NULL,
+    departement VARCHAR(100) NOT NULL,
+    CONSTRAINT fk_enseignant_user FOREIGN KEY (id_user) 
+        REFERENCES Utilisateur(id_user) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;`,
+
+            stages: `CREATE TABLE PropositionStage (
+    id_proposition INT AUTO_INCREMENT PRIMARY KEY,
+    titre VARCHAR(200) NOT NULL,
+    description TEXT NOT NULL,
+    technologies VARCHAR(255),
+    entreprise VARCHAR(150) NOT NULL,
+    date_publication DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    statut VARCHAR(50) DEFAULT 'Ouvert' NOT NULL,
+    id_enseignant INT NOT NULL,
+    CONSTRAINT fk_proposition_enseignant FOREIGN KEY (id_enseignant) 
+        REFERENCES Enseignant(id_user) ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;`,
+
+            demandes: `CREATE TABLE DemandeStage (
+    id_demande INT AUTO_INCREMENT PRIMARY KEY,
+    date_demande DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    statut ENUM('En attente', 'Acceptée', 'Refusée', 'Validée', 'Archivée') DEFAULT 'En attente' NOT NULL,
+    cv VARCHAR(255) NOT NULL,
+    lettre_motivation TEXT,
+    id_etudiant INT NOT NULL,
+    id_proposition INT NOT NULL,
+    CONSTRAINT fk_demande_etudiant FOREIGN KEY (id_etudiant) 
+        REFERENCES Etudiant(id_user) ON DELETE CASCADE,
+    CONSTRAINT fk_demande_proposition FOREIGN KEY (id_proposition) 
+        REFERENCES PropositionStage(id_proposition) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE Refus (
+    id_refus INT AUTO_INCREMENT PRIMARY KEY,
+    motif TEXT NOT NULL,
+    date_refus DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    id_demande INT UNIQUE NOT NULL,
+    CONSTRAINT fk_refus_demande FOREIGN KEY (id_demande) 
+        REFERENCES DemandeStage(id_demande) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;`,
+
+            documents: `CREATE TABLE Attestation (
+    id_attestation INT AUTO_INCREMENT PRIMARY KEY,
+    numero VARCHAR(100) UNIQUE NOT NULL,
+    date_generation DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    fichier_pdf VARCHAR(255) NOT NULL,
+    appreciation TEXT,
+    mention VARCHAR(50),
+    id_demande INT UNIQUE NOT NULL,
+    CONSTRAINT fk_attestation_demande FOREIGN KEY (id_demande) 
+        REFERENCES DemandeStage(id_demande) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE Archive (
+    id_archive INT AUTO_INCREMENT PRIMARY KEY,
+    date_archivage DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    id_demande INT UNIQUE NOT NULL,
+    CONSTRAINT fk_archive_demande FOREIGN KEY (id_demande) 
+        REFERENCES DemandeStage(id_demande) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;`,
+
+            notifs: `CREATE TABLE Notification (
+    id_notification INT AUTO_INCREMENT PRIMARY KEY,
+    message TEXT NOT NULL,
+    date_envoi DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    lu BOOLEAN DEFAULT FALSE NOT NULL,
+    id_user INT NOT NULL,
+    CONSTRAINT fk_notification_user FOREIGN KEY (id_user) 
+        REFERENCES Utilisateur(id_user) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;`
+        };
+
+        const djangoCode = `from django.db import models
+from django.contrib.auth.models import AbstractUser
+
+# -------------------------------------------------------------
+# 1. MODELE UTILISATEUR & HERITAGE (Multi-table Inheritance)
+# -------------------------------------------------------------
+
+class Utilisateur(models.Model):
+    """
+    Modèle de base pour tous les utilisateurs.
+    En Django, pour utiliser l'authentification native avec ce schéma hérité,
+    on peut hériter de AbstractUser à la place de models.Model si souhaité.
+    """
+    ROLE_CHOICES = [
+        ('etudiant', 'Étudiant'),
+        ('enseignant', 'Enseignant'),
+        ('admin', 'Administrateur / Administration'),
+    ]
+    
+    nom = models.CharField(max_length=100)
+    prenom = models.CharField(max_length=100)
+    email = models.EmailField(unique=True)
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES)
+    date_creation = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.nom} {self.prenom} ({self.get_role_display()})"
+
+
+class Etudiant(Utilisateur):
+    """
+    Hérite de Utilisateur. Django crée implicitement un lien OneToOneField
+    vers la table Utilisateur sous le capot.
+    """
+    matricule = models.CharField(max_length=50, unique=True)
+    specialite = models.CharField(max_length=100)
+    niveau = models.CharField(max_length=50)
+    departement = models.CharField(max_length=100)
+
+    def __str__(self):
+        return f"Étudiant: {self.nom} {self.prenom} - {self.matricule}"
+
+
+class Enseignant(Utilisateur):
+    """
+    Hérite de Utilisateur.
+    """
+    grade = models.CharField(max_length=100)
+    departement = models.CharField(max_length=100)
+
+    def __str__(self):
+        return f"Enseignant: {self.nom} {self.prenom} - {self.grade}"
+
+
+# -------------------------------------------------------------
+# 2. PROPOSITION DE STAGES
+# -------------------------------------------------------------
+
+class PropositionStage(models.Model):
+    titre = models.CharField(max_length=200)
+    description = models.TextField()
+    technologies = models.CharField(max_length=255, blank=True, null=True, help_text="Ex: Django, React, MySQL")
+    entreprise = models.CharField(max_length=150)
+    date_publication = models.DateTimeField(auto_now_add=True)
+    statut = models.CharField(max_length=50, default='Ouvert')
+    enseignant = models.ForeignKey(Enseignant, on_delete=models.RESTRICT, related_name='propositions')
+
+    def __str__(self):
+        return f"{self.titre} - {self.entreprise}"
+
+
+# -------------------------------------------------------------
+# 3. DEMANDES DE STAGE & RECOUVREMENT DES REGLES METIER
+# -------------------------------------------------------------
+
+class DemandeStage(models.Model):
+    STATUT_CHOICES = [
+        ('En attente', 'En attente'),
+        ('Acceptée', 'Acceptée'),
+        ('Refusée', 'Refusée'),
+        ('Validée', 'Validée (Validation Finale)'),
+        ('Archivée', 'Archivée'),
+    ]
+    
+    date_demande = models.DateTimeField(auto_now_add=True)
+    statut = models.CharField(max_length=20, choices=STATUT_CHOICES, default='En attente')
+    cv = models.FileField(upload_to='cvs/')
+    lettre_motivation = models.TextField(blank=True, null=True)
+    etudiant = models.ForeignKey(Etudiant, on_delete=models.CASCADE, related_name='demandes')
+    proposition = models.ForeignKey(PropositionStage, on_delete=models.CASCADE, related_name='demandes')
+
+    def __str__(self):
+        return f"Demande #{self.id} de {self.etudiant.nom} pour {self.proposition.titre}"
+
+
+class Refus(models.Model):
+    """
+    Relation 1:1 avec DemandeStage. Enregistré uniquement si le statut est 'Refusée'.
+    """
+    motif = models.TextField()
+    date_refus = models.DateTimeField(auto_now_add=True)
+    demande = models.OneToOneField(DemandeStage, on_delete=models.CASCADE, related_name='details_refus')
+
+    def __str__(self):
+        return f"Refus de la Demande #{self.demande.id}"
+
+
+# -------------------------------------------------------------
+# 4. DOCUMENTS & ADMINISTRATION
+# -------------------------------------------------------------
+
+class Attestation(models.Model):
+    """
+    Attestation de fin de stage générée après validation finale.
+    Relation 1:1 avec DemandeStage.
+    """
+    numero = models.CharField(max_length=100, unique=True)
+    date_generation = models.DateTimeField(auto_now_add=True)
+    fichier_pdf = models.FileField(upload_to='attestations/')
+    appreciation = models.TextField(blank=True, null=True)
+    mention = models.CharField(max_length=50, blank=True, null=True)
+    demande = models.OneToOneField(DemandeStage, on_delete=models.CASCADE, related_name='attestation')
+
+    def __str__(self):
+        return f"Attestation N° {self.numero}"
+
+
+class Archive(models.Model):
+    """
+    Dossier archivé par la plateforme pour l'administration.
+    """
+    date_archivage = models.DateTimeField(auto_now_add=True)
+    demande = models.OneToOneField(DemandeStage, on_delete=models.CASCADE, related_name='archive')
+
+    def __str__(self):
+        return f"Archive de la Demande #{self.demande.id}"
+
+
+# -------------------------------------------------------------
+# 5. NOTIFICATIONS SYSTEME
+# -------------------------------------------------------------
+
+class Notification(models.Model):
+    message = models.TextField()
+    date_envoi = models.DateTimeField(auto_now_add=True)
+    lu = models.BooleanField(default=False)
+    utilisateur = models.ForeignKey(Utilisateur, on_delete=models.CASCADE, related_name='notifications')
+
+    def __str__(self):
+        return f"Notification pour {self.utilisateur.email} - Lu: {self.lu}"
+`;
+
+        // Switch between tabs
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            // Set active class
+            event.currentTarget.classList.add('active');
+            document.getElementById('tab-' + tabId).classList.add('active');
+            
+            if (tabId === 'mcd') {
+                setTimeout(drawMCDConnections, 50);
+            }
+        }
+
+        // Select a table in the interactive schema
+        function selectTable(tableName) {
+            document.querySelectorAll('.db-table').forEach(table => {
+                table.classList.remove('active', 'highlighted', 'dimmed');
+            });
+
+            const selected = document.querySelector(`.db-table[data-table="${tableName}"]`);
+            selected.classList.add('active');
+
+            // Find related tables
+            let related = [];
+            if (tableName === 'utilisateur') {
+                related = ['etudiant', 'enseignant', 'notification'];
+            } else if (tableName === 'etudiant') {
+                related = ['utilisateur', 'demande'];
+            } else if (tableName === 'enseignant') {
+                related = ['utilisateur', 'proposition'];
+            } else if (tableName === 'proposition') {
+                related = ['enseignant', 'demande'];
+            } else if (tableName === 'demande') {
+                related = ['etudiant', 'proposition', 'refus', 'attestation', 'archive'];
+            } else if (tableName === 'refus') {
+                related = ['demande'];
+            } else if (tableName === 'attestation') {
+                related = ['demande'];
+            } else if (tableName === 'notification') {
+                related = ['utilisateur'];
+            } else if (tableName === 'archive') {
+                related = ['demande'];
+            }
+
+            document.querySelectorAll('.db-table').forEach(table => {
+                const tName = table.getAttribute('data-table');
+                if (tName !== tableName) {
+                    if (related.includes(tName)) {
+                        table.classList.add('highlighted');
+                    } else {
+                        table.classList.add('dimmed');
+                    }
+                }
+            });
+
+            // Update details panel
+            const meta = dbSchema[tableName];
+            document.getElementById('panel-title-text').innerHTML = `<span>${meta.title}</span>`;
+            document.getElementById('panel-desc').innerHTML = meta.desc;
+            document.getElementById('panel-relations').innerHTML = meta.relations;
+            document.getElementById('details-sql').textContent = meta.sql;
+        }
+
+        // Show SQL code in the SQL tab
+        function showSQLGroup(groupName) {
+            document.querySelectorAll('#tab-sql .sql-nav-item').forEach(item => item.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+            document.getElementById('sql-pre-code').textContent = sqlGroups[groupName];
+        }
+
+        // Copy text to clipboard
+        function copyCode(elementId) {
+            const code = document.getElementById(elementId).textContent;
+            navigator.clipboard.writeText(code).then(() => {
+                const toast = document.getElementById('toast');
+                toast.classList.add('show');
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                }, 2000);
+            });
+        }
+
+        function exportFullSQL() {
+            navigator.clipboard.writeText(sqlGroups.full).then(() => {
+                const toast = document.getElementById('toast');
+                toast.innerHTML = '<span>✔️ Script SQL complet copié dans le presse-papiers !</span>';
+                toast.classList.add('show');
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                    toast.innerHTML = '<span>✔️ Code copié avec succès !</span>';
+                }, 2500);
+            });
+        }
+
+        // Dynamic Merise connection drawing
+        function drawMCDConnections() {
+            const svg = document.getElementById('mcd-connections');
+            svg.innerHTML = '';
+            
+            const lines = [
+                { from: 'ent-utilisateur', to: 'assoc-xt' },
+                { from: 'assoc-xt', to: 'ent-etudiant' },
+                { from: 'assoc-xt', to: 'ent-enseignant' },
+                { from: 'ent-enseignant', to: 'assoc-proposer' },
+                { from: 'assoc-proposer', to: 'ent-proposition' },
+                { from: 'ent-proposition', to: 'assoc-concerner' },
+                { from: 'assoc-concerner', to: 'ent-demande' },
+                { from: 'ent-etudiant', to: 'assoc-postuler' },
+                { from: 'assoc-postuler', to: 'ent-demande' },
+                { from: 'ent-utilisateur', to: 'assoc-recevoir' },
+                { from: 'assoc-recevoir', to: 'ent-notification' },
+                { from: 'ent-demande', to: 'assoc-rejeter' },
+                { from: 'assoc-rejeter', to: 'ent-refus' },
+                { from: 'ent-demande', to: 'assoc-generer' },
+                { from: 'assoc-generer', to: 'ent-attestation' },
+                { from: 'ent-demande', to: 'assoc-archiver' },
+                { from: 'assoc-archiver', to: 'ent-archive' }
+            ];
+
+            const canvasRect = svg.getBoundingClientRect();
+
+            lines.forEach(line => {
+                const fromEl = document.getElementById(line.from);
+                const toEl = document.getElementById(line.to);
+                
+                if (fromEl && toEl) {
+                    const r1 = fromEl.getBoundingClientRect();
+                    const r2 = toEl.getBoundingClientRect();
+                    
+                    // Coordinates relative to svg canvas
+                    const x1 = (r1.left + r1.width / 2) - canvasRect.left + svg.parentElement.scrollLeft;
+                    const y1 = (r1.top + r1.height / 2) - canvasRect.top + svg.parentElement.scrollTop;
+                    const x2 = (r2.left + r2.width / 2) - canvasRect.left + svg.parentElement.scrollLeft;
+                    const y2 = (r2.top + r2.height / 2) - canvasRect.top + svg.parentElement.scrollTop;
+                    
+                    const path = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    path.setAttribute('x1', x1);
+                    path.setAttribute('y1', y1);
+                    path.setAttribute('x2', x2);
+                    path.setAttribute('y2', y2);
+                    path.setAttribute('stroke', 'rgba(139, 92, 246, 0.4)');
+                    path.setAttribute('stroke-width', '2');
+                    svg.appendChild(path);
+                }
+            });
+        }
+
+        // Initialize codes
+        document.getElementById('sql-pre-code').textContent = sqlGroups.full;
+        document.getElementById('django-pre-code').textContent = djangoCode;
+
+        // Auto select first table
+        window.addEventListener('load', () => {
+            selectTable('utilisateur');
+        });
+    </script>
+</body>
+</html>

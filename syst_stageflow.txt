@@ -1,0 +1,218 @@
+Projet : Système de Gestion des Stages –
+StageFlow
+Description générale
+StageFlow est une plateforme web destinée à la gestion des stages universitaires.
+Le système permet aux étudiants de déposer des demandes de stage, aux enseignants de proposer et
+valider des stages, et à l’administration de gérer la validation finale ainsi que l’archivage des dossiers.
+Le système contient trois types d’utilisateurs :
+Étudiant
+Enseignant
+Administration
+L’authentification se fait via SSO estin (@estin.dz).
+Fonctionnalités principales
+Espace Étudiant
+Se connecter
+Consulter les propositions de stages
+Déposer une demande de stage
+Suivre le statut des demandes
+Confirmer l’acceptation d’un stage
+Gérer son profil
+Recevoir des notifications
+Espace Enseignant
+Créer des propositions de stages
+Gérer ses propositions
+Valider ou refuser une demande
+Saisir un motif de refus
+Suivre ses étudiants
+Générer une attestation
+Espace Administration
+Valider définitivement une demande
+Imprimer l’attestation
+Archiver les dossiers
+Notifier les étudiants
+•
+•
+•
+•
+•
+•
+•
+•
+•
+•
+•
+•
+•
+•
+•
+•
+•
+•
+•
+•
+1
+
+-- 1 of 4 --
+
+Règles métier
+Un étudiant peut déposer plusieurs demandes.
+Une demande appartient à un seul étudiant.
+Une proposition de stage est créée par un enseignant.
+Une demande concerne une seule proposition de stage.
+Une demande peut avoir plusieurs statuts :
+En attente
+Acceptée
+Refusée
+Validée
+Archivée
+Lorsqu’une demande est refusée, un motif de refus doit être enregistré.
+Une attestation est générée uniquement après validation finale.
+L’administration effectue la validation finale.
+Chaque utilisateur possède un profil et peut recevoir des notifications.
+Entités principales attendues dans la base de
+données
+User
+id
+nom
+prénom
+email
+rôle (étudiant, enseignant, admin)
+date_creation
+Étudiant
+id
+matricule
+spécialité
+niveau
+département
+Enseignant
+id
+grade
+département
+1.
+2.
+3.
+4.
+5.
+6.
+7.
+8.
+9.
+10.
+11.
+12.
+13.
+14.
+•
+•
+•
+•
+•
+•
+•
+•
+•
+•
+•
+•
+•
+•
+2
+
+-- 2 of 4 --
+
+PropositionStage
+id
+titre
+description
+entreprise
+date_publication
+statut
+enseignant_id
+DemandeStage
+id
+date_demande
+statut
+cv
+lettre_motivation
+étudiant_id
+proposition_id
+Refus
+id
+motif
+date_refus
+demande_id
+Attestation
+id
+numéro
+date_generation
+fichier_pdf
+demande_id
+Notification
+id
+message
+date_envoi
+lu
+utilisateur_id
+Archive
+id
+date_archivage
+demande_id
+•
+•
+•
+•
+•
+•
+•
+•
+•
+•
+•
+•
+•
+•
+•
+•
+•
+•
+•
+•
+•
+•
+•
+•
+•
+•
+•
+•
+•
+•
+•
+3
+
+-- 3 of 4 --
+
+Relations importantes
+Un enseignant peut créer plusieurs propositions.
+Une proposition peut recevoir plusieurs demandes.
+Un étudiant peut envoyer plusieurs demandes.
+Une demande peut avoir une attestation.
+Un utilisateur peut recevoir plusieurs notifications.
+Technologies prévues
+Backend : Dajango
+Frontend : html , css, javascript
+Base de données relationnelle (MySQL )
+UML utilisé pour la conception
+•
+•
+•
+•
+•
+•
+•
+•
+•
+4
+
+-- 4 of 4 --
+

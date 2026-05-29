@@ -1,0 +1,234 @@
+République Algérienne Démocratique Populaire
+Ministère de l’Enseignement Supérieur et de la Recherche
+Scientifique
+Rapport 02 :
+Les diagrammes UML
+Membres du groupe :
+Laetcia Chertouk	➢
+Melissa Achour	➢
+Anayis Feltane	➢
+Samir Mamet	➢
+Encadré par :
+Mr. HASSAOUI	➔
+Mme. LAAMAMRA	➔
+
+-- 1 of 13 --
+
+Introduction :
+Dans le cadre du développement d’un système de gestion des stages, il
+est important de définir à la fois l’architecture globale du système,
+son organisation interne et son fonctionnement.
+L’architecture repose sur une plateforme centrale qui permet aux
+différents acteurs — étudiants, enseignants et administrateurs —
+d’interagir efficacement.
+Pour mieux comprendre le système,trois diagrammes UML sont utilisés :
+✔ Diagramme de cas d’utilisation .
+✔ Diagramme de séquence .
+✔ Diagramme classe .
+Diagramme de cas d’utilisation :
+1. Espace Étudiant
+L’espace étudiant permet à l’utilisateur de gérer toutes ses démarches
+liées au stage, depuis la consultation jusqu’à la validation finale.
+Fonctionnalités principales :
+➢Se connecter (SSO @estin.dz) : L’étudiant accède au système
+via une authentification centralisée.
+➢Déposer une demande (Nouvelle demande) : Permet de
+soumettre une candidature de stage en fournissant les
+informations nécessaires (CV, entreprise, sujet, etc.).
+➢Consulter les propositions : L’étudiant peut parcourir les offres
+de stages proposées par les enseignants.
+➢Suivre le statut (Mes demandes) : Suivi en temps réel de l’état
+de ses demandes (en attente, acceptée, refusée…).
+➢Confirmer l’acceptation : Une fois la demande validée,
+l’étudiant doit confirmer son acceptation.
+
+-- 2 of 13 --
+
+➢Gérer son profil / Notifications : Mise à jour des informations
+personnelles et consultation des notifications (réponses,
+décisions…).
+2. Espace Enseignant
+L’enseignant joue un rôle clé dans la gestion pédagogique et le suivi des stages.
+Fonctionnalités principales :
+➢Proposer des stages (Créer proposition) : Publication d’offres
+de stages destinées aux étudiants.
+➢Gérer ses propositions : Modification ou suppression des offres
+publiées.
+➢Valider / Refuser une demande : Analyse des candidatures des
+étudiants et prise de décision.
+Extension : Saisir motif de refus
+•En cas de refus, l’enseignant doit obligatoirement
+préciser la raison.
+➢Suivre ses étudiants : Suivi des étudiants encadrés durant leur
+stage.
+➢Générer une attestation : Production d’un document attestant la
+réalisation du stage .
+Cette action inclut une validation administrative.
+3. Espace Administration
+L’administration assure le contrôle final et la gestion documentaire.
+Fonctionnalités principales :
+•Validation finale de la demande : Vérification et validation
+officielle du stage.
+• Inclut : Notifier l’étudiant : L’étudiant est informé
+automatiquement de la décision finale.
+•Imprimer l’attestation : Génération et impression du document
+officiel.
+•Archiver les dossiers : Conservation des dossiers de stages
+pour un suivi administratif.
+
+-- 3 of 13 --
+
+➢ Relations importantes de cas d’utilisation :
+•« include » (inclusion)
+•La génération d’attestation nécessite une validation
+administrative.
+•La validation finale inclut l’envoi d’une notification à
+l’étudiant.
+•« extend » (extension)
+•La saisie du motif de refus intervient uniquement si une
+demande est refusée.
+
+-- 4 of 13 --
+
+
+
+-- 5 of 13 --
+
+Diagramme de séquence :
+Ce diagramme montre le processus de gestion d’une demande de
+stage entre quatre acteurs : l’étudiant, l’enseignant, l’administration et la
+plateforme.
+1.Consultation et demande
+◦ L’étudiant consulte les propositions de stage disponibles sur la
+plateforme.
+◦ Il choisit une offre et soumet une demande de stage.
+2 .Notification et traitement initial
+◦ La plateforme notifie l’enseignant qu’une nouvelle demande a été
+faite.
+◦ L’enseignant examine la demande et peut proposer ou confirmer
+le stage.
+◦ Ensuite, une décision est prise : valider ou refuser la demande.
+3.Cas 1 : Demande refusée
+◦ L’enseignant indique le motif du refus.
+◦ La plateforme met à jour le statut à “refusée”.
+◦ L’étudiant est notifié avec la raison du refus.
+4.Cas 2 : Demande validée
+◦ L’enseignant renseigne les détails d’encadrement et le planning.
+◦ Le statut passe à “validée”.
+◦ Une attestation de stage est générée (brouillon), puis finalisée.
+◦ L’attestation est transmise à l’administration.
+5.Suivi et finalisation
+◦ L’administration suit le dossier jusqu’à ce qu’il soit complet.
+◦ Une décision finale d’acceptation est prise.
+◦ L’étudiant reçoit une notification d’acceptation.
+
+-- 6 of 13 --
+
+6.Clôture du dossier
+◦ L’enseignant envoie l’attestation à l ‘administration.
+◦ L’administration imprime puis signe l’attestation.
+◦ Le dossier est ensuite archivé par la plateforme.
+
+-- 7 of 13 --
+
+
+
+-- 8 of 13 --
+
+Diagramme de classe :
+Ce diagramme représente un système de gestion des stages avec
+plusieurs types d’utilisateurs et des objets liés au processus.
+1. Les utilisateurs
+Il existe une classe générale Utilisateur (id, nom, prénom, email, rôle)
+dont héritent :
+•Étudiant
+•Enseignant
+•Administrateur
+Cela signifie que tous partagent des informations communes mais ont
+des rôles différents.
+2. Le rôle de chaque acteur
+➢Étudiant
+•Consulte les propositions de stage
+•Dépose une demande
+•Confirme son acceptation
+➢Enseignant
+•Propose des stages
+•Valide ou refuse les demandes (avec motif)
+•Génère une attestation
+➢Administrateur
+•Donne la validation finale
+•Imprime l’attestation
+•Archive le dossier
+3. Les éléments principaux du système
+➢PropositionStage
+•Représente une offre de stage (titre, description,
+technologies, etc.)
+•Un enseignant peut proposer plusieurs stages
+
+-- 9 of 13 --
+
+➢DemandeStage
+•Représente une demande faite par un étudiant
+•Contient : date, motivation, CV, statuts, motif de refus
+•Une demande concerne une proposition de stage
+➢Attestation
+•Document généré après validation
+•Contient une appréciation, une mention et une date
+4. Les relations importantes
+•Un enseignant propose plusieurs propositions de stage
+•Un étudiant peut faire plusieurs demandes
+•Une demande est liée à une seule proposition
+•Une demande peut générer au plus une attestation
+•L’administrateur approuve les demandes et gère les attestations
+5. Résumé global
+Le système fonctionne ainsi :
+L’enseignant publie des stages → l’étudiant postule → l’enseignant
+accepte ou refuse → l’administrateur valide → une attestation est
+générée → le dossier est finalisé et archivé.
+
+-- 10 of 13 --
+
+
+
+-- 11 of 13 --
+
+Architecture globale :
+Le projet StageFlow est une plateforme numérique complète conçue
+pour simplifier et centraliser la gestion des stages universitaires (DPGR)
+à travers une architecture à trois couches (Présentation, Métier,
+Données).
+1. L’Utilisateur (Le Client)
+C’est le point de départ. L’utilisateur (Étudiant, Enseignant ou
+Administrateur) accède à la plateforme via un navigateur web (Chrome,
+Firefox, etc.) ou une application mobile. Il envoie des requêtes (clics,
+remplissage de formulaires) qui sont transmises au niveau suivant.
+2. Le Frontend (L’Interface Utilisateur)
+C'est la partie "visible" de l'iceberg. Développée avec des technologies
+comme HTML, CSS et JavaScript, elle a deux rôles principaux :
+Affichage :	➢ Présenter les informations de manière élégante et
+intuitive (tableaux de bord, listes de stages, notifications).
+Interaction :	➢ Récupérer les actions de l'utilisateur pour les envoyer
+au "cerveau" du
+système (le Backend).
+3. Le Backend (Le Cerveau du Système)
+C'est ici que réside toute l'intelligence de StageFlow. C'est une couche
+invisible pour l'utilisateur. Ses missions sont :
+Logique Applicative :	➢ Appliquer les règles métier.
+Authentification :	➢ Vérifier qui est connecté et ce qu'il a le droit de
+faire.
+Traitement :	➢ Recevoir les demandes du Frontend, les analyser, et
+décider quelles
+informations aller chercher ou modifier.
+
+-- 12 of 13 --
+
+4. La Base de Données (Le Stockage)
+C'est la mémoire de la plateforme. On utilise MySQL pour stocker de
+façon organisée :
+● Les profils des utilisateurs.
+● Les sujets de stages et leurs descriptions.
+● L'état des candidatures (en attente, validée, refusée).
+● Les fichiers (liens vers les CV et attestations).
+
+-- 13 of 13 --
+
