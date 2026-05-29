@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StageFlow — Connexion</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Lora:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --blue-dark: #1e3a6e;
+    --blue-mid: #2d5aa0;
+    --blue-light: #4a90d9;
+    --blue-pale: #c8dff5;
+    --bg: #ddeeff;
+    --bg2: #e8f2fc;
+    --white: #ffffff;
+    --text: #1a2e4a;
+    --text2: #4a6080;
+    --text3: #7a95b0;
+    --shadow: 0 4px 24px rgba(30,58,110,0.10);
+    --shadow-lg: 0 8px 40px rgba(30,58,110,0.15);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  .topbar {
+    background: var(--white);
+    border-bottom: 1px solid rgba(30,58,110,0.08);
+    padding: 0 28px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 2px 10px rgba(30,58,110,0.06);
+  }
+  .topbar-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+  .topbar-logo-icon { width: 36px; height: 36px; background: linear-gradient(135deg, var(--blue-mid), var(--blue-light)); border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+  .topbar-logo-text { font-weight: 800; font-size: 18px; color: var(--blue-dark); line-height: 1; }
+  .topbar-logo-sub { font-size: 9px; color: var(--text3); font-weight: 500; display: block; letter-spacing: .4px; }
+  .topbar-back { display: flex; align-items: center; gap: 6px; text-decoration: none; color: var(--text2); font-size: 13px; font-weight: 500; padding: 7px 14px; border-radius: 8px; border: 1px solid rgba(30,58,110,0.12); background: var(--bg2); transition: all .2s; }
+  .topbar-back:hover { background: var(--white); color: var(--blue-dark); box-shadow: var(--shadow); }
+  .login-main { flex: 1; display: flex; align-items: center; justify-content: center; padding: 48px 20px; }
+  .login-box { width: 100%; max-width: 480px; text-align: center; animation: fadeUp .5s ease both; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  .login-logo { display: flex; flex-direction: column; align-items: center; gap: 12px; margin-bottom: 36px; }
+  .login-logo-icon { width: 80px; height: 80px; background: linear-gradient(135deg, var(--blue-dark), var(--blue-light)); border-radius: 22px; display: flex; align-items: center; justify-content: center; font-size: 38px; box-shadow: 0 8px 32px rgba(30,58,110,0.22); }
+  .login-logo-name { font-weight: 800; font-size: 28px; color: var(--blue-dark); line-height: 1; letter-spacing: -.3px; }
+  .login-logo-dpgr { font-size: 12px; color: var(--text3); font-weight: 600; letter-spacing: 1px; text-transform: uppercase; }
+  .login-logo-tagline { font-size: 12px; color: var(--text3); font-style: italic; }
+  .login-greeting { font-family: 'Lora', serif; font-size: 22px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+  .login-subtitle { font-size: 14px; color: var(--text2); margin-bottom: 36px; }
+  .login-card { background: var(--white); border-radius: 20px; padding: 32px 28px; box-shadow: var(--shadow-lg); border: 1px solid rgba(30,58,110,0.08); margin-bottom: 20px; }
+  .google-btn { display: flex; align-items: center; justify-content: center; gap: 12px; width: 100%; background: var(--blue-dark); color: var(--white); border: none; border-radius: 14px; padding: 16px 24px; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 15px; font-weight: 600; cursor: pointer; transition: all .2s; box-shadow: 0 4px 18px rgba(30,58,110,0.22); }
+  .google-btn:hover { background: var(--blue-mid); transform: translateY(-2px); box-shadow: 0 8px 28px rgba(30,58,110,0.30); }
+  .google-btn:active { transform: translateY(0); }
+  .google-icon { width: 26px; height: 26px; background: var(--white); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; }
+  .divider { display: flex; align-items: center; gap: 12px; margin: 22px 0; color: var(--text3); font-size: 12px; font-weight: 500; }
+  .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: rgba(30,58,110,0.1); }
+  .domain-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(74,144,217,0.1); border: 1px solid rgba(74,144,217,0.25); border-radius: 8px; padding: 8px 14px; font-size: 12px; font-weight: 600; color: var(--blue-mid); }
+  .info-note { font-size: 12px; color: var(--text3); line-height: 1.6; background: var(--bg2); border-radius: 10px; padding: 12px 16px; border: 1px solid rgba(30,58,110,0.07); text-align: left; margin-top: 16px; display: flex; gap: 10px; align-items: flex-start; }
+  .info-note-icon { font-size: 15px; flex-shrink: 0; margin-top: 1px; }
+  .login-footer { font-size: 12px; color: var(--text3); }
+  .login-footer a { color: var(--blue-mid); text-decoration: none; font-weight: 600; }
+  .login-footer a:hover { text-decoration: underline; }
+  .spinner { display: none; width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.4); border-top-color: var(--white); border-radius: 50%; animation: spin .7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @media (max-width: 520px) { .login-card { padding: 24px 18px; } .login-logo-icon { width: 64px; height: 64px; font-size: 30px; } .login-logo-name { font-size: 22px; } }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a href="index.html" class="topbar-logo">
+    <div class="topbar-logo-icon">🎓</div>
+    <div>
+      <div class="topbar-logo-text">StageFlow</div>
+      <span class="topbar-logo-sub">DPGR · Gestion intelligente des stages</span>
+    </div>
+  </a>
+  <a href="index.html" class="topbar-back">← Accueil</a>
+</header>
+
+<main class="login-main">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="login-logo-icon">🎓</div>
+      <div>
+        <div class="login-logo-name">StageFlow</div>
+        <div class="login-logo-dpgr">DPGR</div>
+        <div class="login-logo-tagline">Gestion intelligente des stages</div>
+      </div>
+    </div>
+    <div class="login-greeting">Bienvenue !</div>
+    <div class="login-subtitle">Accédez à votre espace de gestion de stages</div>
+    <div class="login-card">
+      <button class="google-btn" onclick="handleLogin(this)">
+        <div class="google-icon">🌐</div>
+        <span id="btn-label">Se connecter avec Google @estin.dz</span>
+        <div class="spinner" id="spinner"></div>
+      </button>
+      <div class="divider">Connexion sécurisée</div>
+      <div class="domain-badge">🔒 Réservé aux comptes @estin.dz</div>
+      <div class="info-note">
+        <span class="info-note-icon">ℹ️</span>
+        <span>Utilisez votre compte institutionnel Google fourni par l'ESTIN. Vous serez automatiquement redirigé vers votre espace selon votre profil (étudiant, enseignant ou administration).</span>
+      </div>
+    </div>
+    <div class="login-footer">Un problème de connexion ? <a href="#">Contacter le support</a></div>
+  </div>
+</main>
+
+<script>
+  function handleLogin(btn) {
+    btn.style.pointerEvents = 'none';
+    btn.style.opacity = '.8';
+    document.getElementById('spinner').style.display = 'block';
+    document.getElementById('btn-label').textContent = 'Connexion en cours…';
+    setTimeout(() => {
+      btn.style.pointerEvents = '';
+      btn.style.opacity = '';
+      document.getElementById('spinner').style.display = 'none';
+      document.getElementById('btn-label').textContent = 'Se connecter avec Google @estin.dz';
+      alert('Intégrez ici votre flux Google OAuth @estin.dz');
+    }, 2000);
+  }
+</script>
+</body>
+</html>
