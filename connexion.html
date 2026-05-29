@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>StageFlow — Connexion</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Lora:wght@400;600&display=swap" rel="stylesheet">
+<script src="js/api.js"></script>
 <style>
   :root {
     --blue-dark: #1e3a6e;
@@ -98,16 +99,22 @@
     <div class="login-greeting">Bienvenue !</div>
     <div class="login-subtitle">Accédez à votre espace de gestion de stages</div>
     <div class="login-card">
-      <button class="google-btn" onclick="handleLogin(this)">
+      <div id="login-error" style="display:none;background:#fee2e2;border:1px solid #fecaca;border-radius:10px;padding:10px 14px;font-size:12.5px;color:#991b1b;margin-bottom:14px;"></div>
+      <div class="form-group" style="margin-bottom:14px;">
+        <input id="login-email" type="email" placeholder="votre.nom@estin.dz"
+          style="width:100%;background:var(--bg2);border:1px solid rgba(30,58,110,0.15);border-radius:10px;padding:12px 14px;font-size:14px;font-family:inherit;color:var(--text);outline:none;"
+          onkeydown="if(event.key==='Enter') handleLogin()">
+      </div>
+      <button class="google-btn" id="login-btn" onclick="handleLogin()">
         <div class="google-icon">🌐</div>
-        <span id="btn-label">Se connecter avec Google @estin.dz</span>
+        <span id="btn-label">Se connecter avec mon compte @estin.dz</span>
         <div class="spinner" id="spinner"></div>
       </button>
       <div class="divider">Connexion sécurisée</div>
       <div class="domain-badge">🔒 Réservé aux comptes @estin.dz</div>
       <div class="info-note">
         <span class="info-note-icon">ℹ️</span>
-        <span>Utilisez votre compte institutionnel Google fourni par l'ESTIN. Vous serez automatiquement redirigé vers votre espace selon votre profil (étudiant, enseignant ou administration).</span>
+        <span>Saisissez votre email institutionnel. Vous serez automatiquement redirigé vers votre espace selon votre profil (étudiant, enseignant ou administration).</span>
       </div>
     </div>
     <div class="login-footer">Un problème de connexion ? <a href="#">Contacter le support</a></div>
@@ -115,18 +122,42 @@
 </main>
 
 <script>
-  function handleLogin(btn) {
+  async function handleLogin() {
+    const email = document.getElementById('login-email').value.trim();
+    const btn   = document.getElementById('login-btn');
+    const errEl = document.getElementById('login-error');
+
+    errEl.style.display = 'none';
+
+    if (!email) {
+      errEl.textContent = 'Veuillez saisir votre adresse email.';
+      errEl.style.display = 'block';
+      return;
+    }
+    if (!email.endsWith('@estin.dz')) {
+      errEl.textContent = 'Seuls les comptes @estin.dz sont autorisés.';
+      errEl.style.display = 'block';
+      return;
+    }
+
     btn.style.pointerEvents = 'none';
     btn.style.opacity = '.8';
     document.getElementById('spinner').style.display = 'block';
     document.getElementById('btn-label').textContent = 'Connexion en cours…';
-    setTimeout(() => {
-      btn.style.pointerEvents = '';
-      btn.style.opacity = '';
-      document.getElementById('spinner').style.display = 'none';
-      document.getElementById('btn-label').textContent = 'Se connecter avec Google @estin.dz';
-      alert('Intégrez ici votre flux Google OAuth @estin.dz');
-    }, 2000);
+
+    const result = await apiLogin(email);
+
+    btn.style.pointerEvents = '';
+    btn.style.opacity = '';
+    document.getElementById('spinner').style.display = 'none';
+    document.getElementById('btn-label').textContent = 'Se connecter avec mon compte @estin.dz';
+
+    if (result.success) {
+      sfRedirectByRole(result.user);
+    } else {
+      errEl.textContent = result.error || 'Erreur de connexion. Réessayez.';
+      errEl.style.display = 'block';
+    }
   }
 </script>
 </body>

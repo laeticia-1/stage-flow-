@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>StageFlow — Espace Étudiant</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Lora:wght@400;600&display=swap" rel="stylesheet">
+<script src="js/api.js"></script>
 <style>
   :root {
     --blue-dark: #1e3a6e;
@@ -355,7 +356,7 @@
     <a class="sb-item" onclick="showPage('profil')"><span class="sb-icon">👤</span> Mon profil</a>
   </nav>
   <div class="sb-footer">
-    <button class="sb-logout" onclick="window.location='index__6_.html'">Déconnexion</button>
+    <button class="sb-logout" onclick="logout()">Déconnexion</button>
   </div>
 </aside>
 
@@ -1032,9 +1033,25 @@
   }
 
   // ── FORM SUBMIT ──
-  function submitForm() {
-    toast('✅ Demande soumise avec succès ! L\'enseignant a été notifié.');
-    setTimeout(() => showPage('mes-demandes'), 1500);
+  async function submitForm() {
+    const user = getCurrentUser();
+    const idEtudiant = user ? user.id : 1;
+    const lettreEl = document.querySelector('.form-textarea');
+    const lettre   = lettreEl ? lettreEl.value : '';
+
+    const payload = {
+      id_etudiant: idEtudiant,
+      id_proposition: 1, // TODO: lire depuis le select
+      lettre_motivation: lettre
+    };
+
+    const result = await apiSoumettreDemande(payload);
+    if (result.success) {
+      sfToast('✅ Demande soumise avec succès ! L\'enseignant a été notifié.', 'success');
+      setTimeout(() => showPage('mes-demandes'), 1500);
+    } else {
+      sfToast('❌ Erreur lors de la soumission. Veuillez réessayer.', 'error');
+    }
   }
 
   // ── TOAST ──
