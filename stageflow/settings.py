@@ -69,21 +69,38 @@ WSGI_APPLICATION = 'stageflow.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/stable/ref/settings/#databases
-# Configured for MySQL (XAMPP compatibility)
+# Configured for MySQL (XAMPP compatibility) with automatic SQLite fallback
+import socket
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'stageflow_db',
-        'USER': 'root',
-        'PASSWORD': '',
-        'HOST': '127.0.0.1',
-        'PORT': '3306',
-        'OPTIONS': {
-            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+def is_mysql_available(host='127.0.0.1', port=3306):
+    try:
+        s = socket.create_connection((host, port), timeout=1)
+        s.close()
+        return True
+    except Exception:
+        return False
+
+if is_mysql_available():
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.mysql',
+            'NAME': 'stageflow_db',
+            'USER': 'root',
+            'PASSWORD': '',
+            'HOST': '127.0.0.1',
+            'PORT': '3306',
+            'OPTIONS': {
+                'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+            }
         }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 
 # Password validation
