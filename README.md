@@ -2,6 +2,17 @@
 
 > Développé pour l'**ESTIN (École supérieure en Sciences et Technologies de l'Informatique et du Numérique)** — DPGR Béjaïa.
 
+## 🌐 Démonstration en ligne
+
+👉 **[https://laeticia-1.github.io/stage-flow-/](https://laeticia-1.github.io/stage-flow-/)**
+
+> **Comptes de test :**
+> | Email | Rôle |
+> |-------|------|
+> | `a.ouali@estin.dz` | 🎓 Étudiant |
+> | `a.benali@estin.dz` | 👨‍🏫 Enseignant |
+> | `admin@estin.dz` | ⚙️ Administration |
+
 ---
 
 ## 📋 Description
